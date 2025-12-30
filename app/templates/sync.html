@@ -1,0 +1,176 @@
+<!-- app/templates/sync.html -->
+{% extends "base.html" %}
+
+{% block title %}Sync with MT5 - MT5 Trading Journal{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Sync with MT5</h1>
+        <p class="text-gray-600">Sync your trades from MetaTrader 5 terminal</p>
+    </div>
+
+    {% if message %}
+    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
+        ✅ {{ message }}
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+        ❌ {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Manual Sync Form -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Manual Sync</h2>
+            <p class="text-gray-600 mb-6">Sync trades for a specific number of days</p>
+            
+            <form method="post" action="/sync">
+                <div class="mb-4">
+                    <label for="days" class="block text-gray-700 mb-2">
+                        Number of days to sync:
+                    </label>
+                    <input type="number" 
+                           id="days" 
+                           name="days" 
+                           value="30" 
+                           min="1" 
+                           max="3650"
+                           class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="text-sm text-gray-500 mt-2">
+                        Sync trades from the last N days. Max 10 years (3650 days).
+                    </p>
+                </div>
+                
+                <button type="submit" 
+                        class="w-full bg-blue-600 text-white py-3 px-4 rounded hover:bg-blue-700 transition-colors">
+                    Start Sync
+                </button>
+            </form>
+        </div>
+
+        <!-- Quick Sync Options -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Quick Sync</h2>
+            <p class="text-gray-600 mb-6">One-click sync options</p>
+            
+            <div class="space-y-4">
+                <button onclick="quickSync(7)" 
+                        class="w-full bg-blue-100 text-blue-700 py-3 px-4 rounded hover:bg-blue-200 transition-colors">
+                    Sync Last 7 Days
+                </button>
+                
+                <button onclick="quickSync(30)" 
+                        class="w-full bg-blue-200 text-blue-800 py-3 px-4 rounded hover:bg-blue-300 transition-colors">
+                    Sync Last 30 Days
+                </button>
+                
+                <button onclick="quickSync(90)" 
+                        class="w-full bg-blue-300 text-blue-900 py-3 px-4 rounded hover:bg-blue-400 transition-colors">
+                    Sync Last 90 Days
+                </button>
+                
+                <button onclick="quickSync(365)" 
+                        class="w-full bg-green-600 text-white py-3 px-4 rounded hover:bg-green-700 transition-colors">
+                    Sync All History (1 Year)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync Instructions -->
+    <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+        <h3 class="text-lg font-bold mb-4">📋 Sync Instructions</h3>
+        <ol class="list-decimal pl-5 space-y-2 text-gray-700">
+            <li>Ensure MetaTrader 5 terminal is running on your computer</li>
+            <li>Make sure you're logged into your trading account in MT5</li>
+            <li>Select the number of days to sync or use quick sync options</li>
+            <li>Click "Start Sync" to begin the synchronization process</li>
+            <li>Wait for the sync to complete (this may take a few moments)</li>
+            <li>Once complete, you'll be redirected to the dashboard</li>
+        </ol>
+        
+        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+            <strong>Note:</strong> The sync process will import all closed trades from your MT5 account history.
+            Open positions will not be synced.
+        </div>
+    </div>
+
+    <!-- Database Info -->
+    <div class="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <h3 class="text-lg font-bold mb-4">📊 Database Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p class="text-gray-600">Current status:</p>
+                <p id="syncStatus" class="font-medium">Loading...</p>
+            </div>
+            <div>
+                <p class="text-gray-600">Last sync:</p>
+                <p id="lastSync" class="font-medium">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function quickSync(days) {
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Syncing...';
+    button.disabled = true;
+    
+    try {
+        const response = await fetch('/api/sync-mt5?days=' + days, {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ ' + result.message + '\nTotal trades in database: ' + result.total_in_db);
+            window.location.href = '/dashboard';
+        } else {
+            alert('❌ Sync failed: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('❌ Error syncing trades: ' + error.message);
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+    }
+}
+
+// Load database info
+async function loadDatabaseInfo() {
+    try {
+        const response = await fetch('/api/stats');
+        const stats = await response.json();
+        
+        document.getElementById('syncStatus').textContent = 
+            stats.total_trades + ' trades in database';
+        
+        // Try to get last sync time from recent trades
+        if (stats.total_trades > 0) {
+            const tradesResponse = await fetch('/api/trades?limit=1');
+            const trades = await tradesResponse.json();
+            if (trades.length > 0) {
+                const lastTradeDate = new Date(trades[0].time);
+                document.getElementById('lastSync').textContent = 
+                    'Last trade: ' + lastTradeDate.toLocaleDateString();
+            }
+        } else {
+            document.getElementById('lastSync').textContent = 'No trades yet';
+        }
+    } catch (error) {
+        document.getElementById('syncStatus').textContent = 'Error loading info';
+        document.getElementById('lastSync').textContent = 'N/A';
+    }
+}
+
+// Load database info when page loads
+document.addEventListener('DOMContentLoaded', loadDatabaseInfo);
+</script>
+{% endblock %}

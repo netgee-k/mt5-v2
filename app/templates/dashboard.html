@@ -1,0 +1,206 @@
+<!-- app/templates/dashboard.html -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard - MT5 Trading Journal{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold mb-2">Dashboard</h1>
+    <p class="text-gray-600">Today is {{ today.strftime('%B %d, %Y') }}</p>
+</div>
+
+<!-- Quick Stats -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-lg shadow">
+        <div class="text-gray-500 text-sm">Total Trades</div>
+        <div class="text-3xl font-bold">{{ stats.total_trades }}</div>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+        <div class="text-gray-500 text-sm">Total Profit</div>
+        <div class="text-3xl font-bold {% if stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+            ${{ "%.2f"|format(stats.total_profit) }}
+        </div>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+        <div class="text-gray-500 text-sm">Win Rate</div>
+        <div class="text-3xl font-bold">{{ "%.1f"|format(stats.win_rate) }}%</div>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+        <div class="text-gray-500 text-sm">Avg Profit/Trade</div>
+        <div class="text-3xl font-bold {% if stats.avg_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+            ${{ "%.2f"|format(stats.avg_profit) }}
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Recent Trades -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b">
+            <h2 class="text-xl font-bold">Recent Trades</h2>
+        </div>
+        <div class="p-6">
+            {% if recent_trades %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="text-left text-gray-500 text-sm">
+                            <th class="pb-2">Ticket</th>
+                            <th class="pb-2">Symbol</th>
+                            <th class="pb-2">Type</th>
+                            <th class="pb-2">Time</th>
+                            <th class="pb-2">Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trade in recent_trades %}
+                        <tr class="border-t">
+                            <td class="py-3">#{{ trade.ticket }}</td>
+                            <td class="py-3">{{ trade.symbol }}</td>
+                            <td class="py-3">
+                                <span class="px-2 py-1 rounded text-xs {% if trade.type == 'BUY' %}bg-blue-100 text-blue-800{% else %}bg-purple-100 text-purple-800{% endif %}">
+                                    {{ trade.type }}
+                                </span>
+                            </td>
+                            <td class="py-3 text-sm">{{ trade.time.strftime('%H:%M') }}</td>
+                            <td class="py-3 {% if trade.profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                                ${{ "%.2f"|format(trade.profit) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <p class="text-gray-500 mb-4">No trades yet.</p>
+                <a href="/sync" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Sync with MT5
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Top Symbols -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b">
+            <h2 class="text-xl font-bold">Top Symbols</h2>
+        </div>
+        <div class="p-6">
+            {% if symbol_stats %}
+            <div class="space-y-4">
+                {% for stat in symbol_stats %}
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="font-medium">{{ stat.symbol }}</div>
+                        <div class="text-sm text-gray-500">{{ stat.total_trades }} trades</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold {% if stat.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            ${{ "%.2f"|format(stat.total_profit) }}
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            {{ "%.1f"|format((stat.win_count / stat.total_trades * 100) if stat.total_trades > 0 else 0) }}% win rate
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-8">No symbol data available</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Sync Section -->
+<div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+    <h3 class="text-lg font-bold mb-4">📡 Sync with MT5</h3>
+    <p class="mb-4">Sync your trades from MetaTrader 5:</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-4 rounded border">
+            <h4 class="font-bold mb-2">Quick Sync</h4>
+            <div class="space-y-2">
+                <button onclick="syncTrades(30)" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Sync Last 30 Days
+                </button>
+                <button onclick="syncTrades(90)" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Sync Last 90 Days
+                </button>
+                <button onclick="syncTrades(365)" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    Sync All History
+                </button>
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded border">
+            <h4 class="font-bold mb-2">Manual Sync</h4>
+            <p class="text-sm text-gray-600 mb-3">For more control, use the sync page:</p>
+            <a href="/sync" class="inline-block w-full text-center bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900">
+                Go to Sync Page
+            </a>
+        </div>
+    </div>
+    <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+        <strong>Note:</strong> Ensure MT5 terminal is running before syncing.
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+    <a href="/calendar" class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+        <div class="text-blue-600 mb-2">📅</div>
+        <h3 class="font-bold mb-2">Calendar View</h3>
+        <p class="text-sm text-gray-600">View trades by day on calendar</p>
+    </a>
+    <a href="/stats" class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+        <div class="text-green-600 mb-2">📊</div>
+        <h3 class="font-bold mb-2">Statistics</h3>
+        <p class="text-sm text-gray-600">Detailed trading statistics & analytics</p>
+    </a>
+    <a href="/trades" class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+        <div class="text-purple-600 mb-2">📋</div>
+        <h3 class="font-bold mb-2">All Trades</h3>
+        <p class="text-sm text-gray-600">Browse and filter all trades</p>
+    </a>
+</div>
+
+<script>
+async function syncTrades(days) {
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Syncing...';
+    button.disabled = true;
+    
+    // Disable all sync buttons
+    document.querySelectorAll('button[onclick^="syncTrades"]').forEach(btn => {
+        btn.disabled = true;
+    });
+    
+    try {
+        const response = await fetch('/api/sync-mt5?days=' + days, {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ ' + result.message + '\nTotal trades in database: ' + result.total_in_db);
+            location.reload();
+        } else {
+            alert('❌ Sync failed: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('❌ Error syncing trades: ' + error.message);
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+        
+        // Re-enable all sync buttons
+        document.querySelectorAll('button[onclick^="syncTrades"]').forEach(btn => {
+            btn.disabled = false;
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,161 @@
+<!-- app/templates/calendar.html -->
+{% extends "base.html" %}
+
+{% block title %}Calendar - MT5 Trading Journal{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold mb-2">Trading Calendar</h1>
+            <p class="text-gray-600">{{ month_name }} {{ year }}</p>
+        </div>
+        <div class="flex space-x-2">
+            <a href="/calendar?year={{ prev_year }}&month={{ prev_month }}" 
+               class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">
+                ← Previous
+            </a>
+            <a href="/calendar?year={{ next_year }}&month={{ next_month }}" 
+               class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">
+                Next →
+            </a>
+            <a href="/calendar" 
+               class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Today
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Stats -->
+<div class="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded shadow">
+        <div class="text-gray-500 text-sm">Month Trades</div>
+        <div class="text-2xl font-bold">{{ month_stats.total_trades }}</div>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+        <div class="text-gray-500 text-sm">Month Profit</div>
+        <div class="text-2xl font-bold {% if month_stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+            ${{ "%.2f"|format(month_stats.total_profit) }}
+        </div>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+        <div class="text-gray-500 text-sm">Month Win Rate</div>
+        <div class="text-2xl font-bold">{{ "%.1f"|format(month_stats.win_rate) }}%</div>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+        <div class="text-gray-500 text-sm">Best Day</div>
+        <div class="text-2xl font-bold">
+            {% set ns = namespace(best_profit=0) %}
+            {% for week in calendar %}
+                {% for day in week %}
+                    {% if day and day.profit > ns.best_profit %}
+                        {% set ns.best_profit = day.profit %}
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+            ${{ "%.2f"|format(ns.best_profit) }}
+        </div>
+    </div>
+</div>
+
+<!-- Calendar -->
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <!-- Weekday headers -->
+    <div class="grid grid-cols-7 bg-gray-100 border-b">
+        <div class="p-4 text-center font-bold text-gray-700">Sunday</div>
+        <div class="p-4 text-center font-bold text-gray-700">Monday</div>
+        <div class="p-4 text-center font-bold text-gray-700">Tuesday</div>
+        <div class="p-4 text-center font-bold text-gray-700">Wednesday</div>
+        <div class="p-4 text-center font-bold text-gray-700">Thursday</div>
+        <div class="p-4 text-center font-bold text-gray-700">Friday</div>
+        <div class="p-4 text-center font-bold text-gray-700">Saturday</div>
+    </div>
+    
+    <!-- Calendar weeks -->
+    {% for week in calendar %}
+    <div class="grid grid-cols-7 border-b last:border-b-0">
+        {% for day in week %}
+            {% if day %}
+            <div class="min-h-32 border-r last:border-r-0 p-3 {% if day.is_today %}bg-blue-50{% endif %}">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="font-bold {% if day.is_today %}text-blue-600{% endif %}">
+                        {{ day.day }}
+                    </div>
+                    {% if day.count > 0 %}
+                    <span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
+                        {{ day.count }} trade{% if day.count != 1 %}s{% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                {% if day.count > 0 %}
+                <div class="space-y-1 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Profit:</span>
+                        <span class="font-medium {% if day.profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            ${{ "%.2f"|format(day.profit) }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Win Rate:</span>
+                        <span class="font-medium">
+                            {{ "%.0f"|format(day.win_rate) }}%
+                        </span>
+                    </div>
+                    <div class="pt-2">
+                        <a href="/trades?skip=0&limit=50&date={{ day.date.isoformat() }}" 
+                           class="text-xs text-blue-600 hover:text-blue-800">
+                            View trades →
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-gray-400 text-sm mt-6">
+                    No trades
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="min-h-32 border-r last:border-r-0 p-3 bg-gray-50"></div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Legend -->
+<div class="mt-6 flex items-center justify-center space-x-6 text-sm">
+    <div class="flex items-center">
+        <div class="w-4 h-4 bg-blue-50 mr-2 border border-blue-200"></div>
+        <span class="text-gray-600">Today</span>
+    </div>
+    <div class="flex items-center">
+        <div class="w-4 h-4 bg-green-100 mr-2"></div>
+        <span class="text-gray-600">Profitable day</span>
+    </div>
+    <div class="flex items-center">
+        <div class="w-4 h-4 bg-red-100 mr-2"></div>
+        <span class="text-gray-600">Loss day</span>
+    </div>
+</div>
+
+<!-- Color coding based on profit -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dayCells = document.querySelectorAll('[class*="min-h-32"]:not(.bg-gray-50)');
+    
+    dayCells.forEach(cell => {
+        const profitElement = cell.querySelector('.profit-positive, .profit-negative');
+        if (profitElement) {
+            const isPositive = profitElement.classList.contains('profit-positive');
+            if (isPositive && !cell.classList.contains('bg-blue-50')) {
+                cell.classList.add('bg-green-50');
+            } else if (!isPositive && !cell.classList.contains('bg-blue-50')) {
+                cell.classList.add('bg-red-50');
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

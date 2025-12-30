@@ -1,0 +1,239 @@
+\<!-- app/templates/stats.html -->
+{% extends "base.html" %}
+
+{% block title %}Statistics - MT5 Trading Journal{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold mb-2">Trading Statistics</h1>
+    <p class="text-gray-600">Comprehensive analysis of your trading performance</p>
+</div>
+
+<!-- Time Period Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <!-- Overall Stats -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold mb-4">Overall</h2>
+        <div class="space-y-3">
+            <div class="flex justify-between">
+                <span class="text-gray-600">Total Trades:</span>
+                <span class="font-bold">{{ overall_stats.total_trades }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Total Profit:</span>
+                <span class="font-bold {% if overall_stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    ${{ "%.2f"|format(overall_stats.total_profit) }}
+                </span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Win Rate:</span>
+                <span class="font-bold">{{ "%.1f"|format(overall_stats.win_rate) }}%</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Avg Profit/Trade:</span>
+                <span class="font-bold {% if overall_stats.avg_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    ${{ "%.2f"|format(overall_stats.avg_profit) }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Last 30 Days -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold mb-4">Last 30 Days</h2>
+        <div class="space-y-3">
+            <div class="flex justify-between">
+                <span class="text-gray-600">Total Trades:</span>
+                <span class="font-bold">{{ monthly_stats.total_trades }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Total Profit:</span>
+                <span class="font-bold {% if monthly_stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    ${{ "%.2f"|format(monthly_stats.total_profit) }}
+                </span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Win Rate:</span>
+                <span class="font-bold">{{ "%.1f"|format(monthly_stats.win_rate) }}%</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Avg Profit/Trade:</span>
+                <span class="font-bold {% if monthly_stats.avg_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    ${{ "%.2f"|format(monthly_stats.avg_profit) }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Last 7 Days -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold mb-4">Last 7 Days</h2>
+        <div class="space-y-3">
+            <div class="flex justify-between">
+                <span class="text-gray-600">Total Trades:</span>
+                <span class="font-bold">{{ weekly_stats.total_trades }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Total Profit:</span>
+                <span class="font-bold {% if weekly_stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    ${{ "%.2f"|format(weekly_stats.total_profit) }}
+                </span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Win Rate:</span>
+                <span class="font-bold">{{ "%.1f"|format(weekly_stats.win_rate) }}%</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Avg Profit/Trade:</span>
+                <span class="font-bold {% if weekly_stats.avg_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    ${{ "%.2f"|format(weekly_stats.avg_profit) }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Symbol Performance -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b">
+            <h2 class="text-xl font-bold">Symbol Performance</h2>
+        </div>
+        <div class="p-6">
+            {% if symbol_stats %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="text-left text-gray-500 text-sm">
+                            <th class="pb-2">Symbol</th>
+                            <th class="pb-2 text-right">Trades</th>
+                            <th class="pb-2 text-right">Win Rate</th>
+                            <th class="pb-2 text-right">Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in symbol_stats %}
+                        <tr class="border-t">
+                            <td class="py-3 font-medium">{{ stat.symbol }}</td>
+                            <td class="py-3 text-right">{{ stat.total_trades }}</td>
+                            <td class="py-3 text-right">
+                                {{ "%.1f"|format((stat.win_count / stat.total_trades * 100) if stat.total_trades > 0 else 0) }}%
+                            </td>
+                            <td class="py-3 text-right {% if stat.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                                ${{ "%.2f"|format(stat.total_profit) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-8">No symbol data available</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Hourly Performance -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b">
+            <h2 class="text-xl font-bold">Trading by Hour</h2>
+        </div>
+        <div class="p-6">
+            {% if hourly_stats %}
+            <div class="space-y-4">
+                {% for hour_stat in hourly_stats %}
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium">
+                            {{ hour_stat.hour }}:00 - {{ hour_stat.hour }}:59
+                        </span>
+                        <span class="text-sm text-gray-600">
+                            {{ hour_stat.total_trades }} trades
+                        </span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-600 h-2 rounded-full" 
+                             style="width: {{ (hour_stat.total_trades / (hourly_stats|map(attribute='total_trades')|max) * 100) if (hourly_stats|map(attribute='total_trades')|max) > 0 else 0 }}%">
+                        </div>
+                    </div>
+                    <div class="flex justify-between mt-1 text-sm">
+                        <span class="text-gray-600">
+                            Win Rate: {{ "%.1f"|format(hour_stat.win_rate) }}%
+                        </span>
+                        <span class="font-medium {% if hour_stat.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            ${{ "%.2f"|format(hour_stat.total_profit) }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-8">No hourly data available</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Performance Metrics -->
+<div class="mt-8 bg-white rounded-lg shadow p-6">
+    <h2 class="text-xl font-bold mb-4">Performance Metrics</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="text-center p-4 bg-gray-50 rounded">
+            <div class="text-2xl font-bold {% if overall_stats.avg_profit > 0 %}profit-positive{% endif %}">
+                ${{ "%.2f"|format(overall_stats.avg_profit) }}
+            </div>
+            <div class="text-gray-600 text-sm">Average Profit</div>
+        </div>
+        <div class="text-center p-4 bg-gray-50 rounded">
+            <div class="text-2xl font-bold">
+                {{ "%.1f"|format(overall_stats.win_rate) }}%
+            </div>
+            <div class="text-gray-600 text-sm">Win Rate</div>
+        </div>
+        <div class="text-center p-4 bg-gray-50 rounded">
+            <div class="text-2xl font-bold">
+                {{ overall_stats.total_trades }}
+            </div>
+            <div class="text-gray-600 text-sm">Total Trades</div>
+        </div>
+        <div class="text-center p-4 bg-gray-50 rounded">
+            <div class="text-2xl font-bold {% if overall_stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                ${{ "%.2f"|format(overall_stats.total_profit) }}
+            </div>
+            <div class="text-gray-600 text-sm">Total Profit</div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Insights -->
+<div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+    <h3 class="text-lg font-bold mb-4">💡 Key Insights</h3>
+    <div class="space-y-3">
+        {% if symbol_stats|length > 0 %}
+            {% set best_symbol = symbol_stats|sort(attribute='total_profit', reverse=true)|first %}
+            {% set worst_symbol = symbol_stats|sort(attribute='total_profit')|first %}
+            
+            {% if best_symbol.total_profit > 0 %}
+            <p>✅ Your best performing symbol is <strong>{{ best_symbol.symbol }}</strong> with ${{ "%.2f"|format(best_symbol.total_profit) }} profit.</p>
+            {% endif %}
+            
+            {% if worst_symbol.total_profit < 0 %}
+            <p>⚠️ Your worst performing symbol is <strong>{{ worst_symbol.symbol }}</strong> with ${{ "%.2f"|format(worst_symbol.total_profit) }} loss.</p>
+            {% endif %}
+        {% endif %}
+        
+        {% if hourly_stats|length > 0 %}
+            {% set best_hour = hourly_stats|sort(attribute='total_profit', reverse=true)|first %}
+            {% if best_hour.total_profit > 0 %}
+            <p>⏰ Your most profitable trading hour is <strong>{{ best_hour.hour }}:00-{{ best_hour.hour }}:59</strong>.</p>
+            {% endif %}
+        {% endif %}
+        
+        {% if overall_stats.win_rate > 50 %}
+        <p>🎯 Your win rate of {{ "%.1f"|format(overall_stats.win_rate) }}% is above 50% - good job!</p>
+        {% else %}
+        <p>📊 Your win rate is {{ "%.1f"|format(overall_stats.win_rate) }}%. Consider focusing on risk management.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
