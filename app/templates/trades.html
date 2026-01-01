@@ -5,53 +5,53 @@
 
 {% block content %}
 <div class="mb-8">
-    <h1 class="text-3xl font-bold mb-2">All Trades</h1>
-    <p class="text-gray-600">Browse and filter your trading history</p>
+    <h1 class="text-3xl font-bold mb-2 text-gray-900 dark:text-white">All Trades</h1>
+    <p class="text-gray-600 dark:text-gray-300">Browse and filter your trading history</p>
 </div>
 
 <!-- Filters -->
-<div class="bg-white rounded-lg shadow p-6 mb-8">
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 p-6 mb-8 border border-gray-200 dark:border-gray-700">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-            <label for="symbolFilter" class="block text-gray-700 mb-2">Filter by Symbol:</label>
+            <label for="symbolFilter" class="block text-gray-700 dark:text-gray-300 mb-2">Filter by Symbol:</label>
             <div class="flex space-x-2">
-                <select id="symbolFilter" class="flex-grow p-2 border border-gray-300 rounded">
+                <select id="symbolFilter" class="flex-grow p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                     <option value="">All Symbols</option>
                     {% for symbol in symbols %}
                     <option value="{{ symbol }}" {% if current_symbol == symbol %}selected{% endif %}>{{ symbol }}</option>
                     {% endfor %}
                 </select>
-                <button onclick="applyFilters()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                <button onclick="applyFilters()" class="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600">
                     Filter
                 </button>
             </div>
         </div>
         
         <div>
-            <label class="block text-gray-700 mb-2">Trade Type:</label>
+            <label class="block text-gray-700 dark:text-gray-300 mb-2">Trade Type:</label>
             <div class="flex space-x-2">
-                <button onclick="filterByType('')" class="px-4 py-2 border rounded hover:bg-gray-100 {% if not request.query_params.get('type') %}bg-gray-200{% endif %}">
+                <button onclick="filterByType('')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 {% if not request.query_params.get('type') %}bg-gray-200 dark:bg-gray-600{% else %}bg-white dark:bg-gray-800{% endif %} text-gray-700 dark:text-gray-300">
                     All
                 </button>
-                <button onclick="filterByType('BUY')" class="px-4 py-2 border rounded hover:bg-blue-50 {% if request.query_params.get('type') == 'BUY' %}bg-blue-100{% endif %}">
+                <button onclick="filterByType('BUY')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 {% if request.query_params.get('type') == 'BUY' %}bg-blue-100 dark:bg-blue-900/40{% else %}bg-white dark:bg-gray-800{% endif %} text-gray-700 dark:text-gray-300">
                     BUY
                 </button>
-                <button onclick="filterByType('SELL')" class="px-4 py-2 border rounded hover:bg-purple-50 {% if request.query_params.get('type') == 'SELL' %}bg-purple-100{% endif %}">
+                <button onclick="filterByType('SELL')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-purple-50 dark:hover:bg-purple-900/20 {% if request.query_params.get('type') == 'SELL' %}bg-purple-100 dark:bg-purple-900/40{% else %}bg-white dark:bg-gray-800{% endif %} text-gray-700 dark:text-gray-300">
                     SELL
                 </button>
             </div>
         </div>
         
         <div>
-            <label class="block text-gray-700 mb-2">Result:</label>
+            <label class="block text-gray-700 dark:text-gray-300 mb-2">Result:</label>
             <div class="flex space-x-2">
-                <button onclick="filterByResult('')" class="px-4 py-2 border rounded hover:bg-gray-100 {% if not request.query_params.get('win') %}bg-gray-200{% endif %}">
+                <button onclick="filterByResult('')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 {% if not request.query_params.get('win') %}bg-gray-200 dark:bg-gray-600{% else %}bg-white dark:bg-gray-800{% endif %} text-gray-700 dark:text-gray-300">
                     All
                 </button>
-                <button onclick="filterByResult('win')" class="px-4 py-2 border rounded hover:bg-green-50 {% if request.query_params.get('win') == 'true' %}bg-green-100{% endif %}">
+                <button onclick="filterByResult('win')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-green-50 dark:hover:bg-green-900/20 {% if request.query_params.get('win') == 'true' %}bg-green-100 dark:bg-green-900/40{% else %}bg-white dark:bg-gray-800{% endif %} text-gray-700 dark:text-gray-300">
                     Win
                 </button>
-                <button onclick="filterByResult('loss')" class="px-4 py-2 border rounded hover:bg-red-50 {% if request.query_params.get('win') == 'false' %}bg-red-100{% endif %}">
+                <button onclick="filterByResult('loss')" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-red-50 dark:hover:bg-red-900/20 {% if request.query_params.get('win') == 'false' %}bg-red-100 dark:bg-red-900/40{% else %}bg-white dark:bg-gray-800{% endif %} text-gray-700 dark:text-gray-300">
                     Loss
                 </button>
             </div>
@@ -60,67 +60,67 @@
 </div>
 
 <!-- Trades Table -->
-<div class="bg-white rounded-lg shadow overflow-hidden">
-    <div class="p-6 border-b flex justify-between items-center">
-        <h2 class="text-xl font-bold">Trades List</h2>
-        <div class="text-gray-600">
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div class="p-6 border-b dark:border-gray-700 flex justify-between items-center">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Trades List</h2>
+        <div class="text-gray-600 dark:text-gray-400">
             Showing {{ trades|length }} of {{ total_trades }} trades
         </div>
     </div>
     
     <div class="overflow-x-auto">
         <table class="min-w-full">
-            <thead class="bg-gray-50">
+            <thead class="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                    <th class="py-3 px-6 text-left text-gray-600 font-medium">Ticket</th>
-                    <th class="py-3 px-6 text-left text-gray-600 font-medium">Time</th>
-                    <th class="py-3 px-6 text-left text-gray-600 font-medium">Symbol</th>
-                    <th class="py-3 px-6 text-left text-gray-600 font-medium">Type</th>
-                    <th class="py-3 px-6 text-left text-gray-600 font-medium">Volume</th>
-                    <th class="py-3 px-6 text-left text-gray-600 font-medium">Price</th>
-                    <th class="py-3 px-6 text-left text-gray-600 font-medium">SL/TP</th>
-                    <th class="py-3 px-6 text-left text-gray-600 font-medium">Profit</th>
-                    <th class="py-3 px-6 text-left text-gray-600 font-medium">Result</th>
+                    <th class="py-3 px-6 text-left text-gray-600 dark:text-gray-400 font-medium">Ticket</th>
+                    <th class="py-3 px-6 text-left text-gray-600 dark:text-gray-400 font-medium">Time</th>
+                    <th class="py-3 px-6 text-left text-gray-600 dark:text-gray-400 font-medium">Symbol</th>
+                    <th class="py-3 px-6 text-left text-gray-600 dark:text-gray-400 font-medium">Type</th>
+                    <th class="py-3 px-6 text-left text-gray-600 dark:text-gray-400 font-medium">Volume</th>
+                    <th class="py-3 px-6 text-left text-gray-600 dark:text-gray-400 font-medium">Price</th>
+                    <th class="py-3 px-6 text-left text-gray-600 dark:text-gray-400 font-medium">SL/TP</th>
+                    <th class="py-3 px-6 text-left text-gray-600 dark:text-gray-400 font-medium">Profit</th>
+                    <th class="py-3 px-6 text-left text-gray-600 dark:text-gray-400 font-medium">Result</th>
                 </tr>
             </thead>
             <tbody>
                 {% for trade in trades %}
-                <tr class="border-t hover:bg-gray-50">
-                    <td class="py-4 px-6">#{{ trade.ticket }}</td>
+                <tr class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td class="py-4 px-6 text-gray-900 dark:text-white">#{{ trade.ticket }}</td>
                     <td class="py-4 px-6">
-                        <div>{{ trade.time.strftime('%Y-%m-%d') }}</div>
-                        <div class="text-sm text-gray-500">{{ trade.time.strftime('%H:%M:%S') }}</div>
+                        <div class="text-gray-900 dark:text-white">{{ trade.time.strftime('%Y-%m-%d') }}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ trade.time.strftime('%H:%M:%S') }}</div>
                     </td>
-                    <td class="py-4 px-6 font-medium">{{ trade.symbol }}</td>
+                    <td class="py-4 px-6 font-medium text-gray-900 dark:text-white">{{ trade.symbol }}</td>
                     <td class="py-4 px-6">
-                        <span class="px-2 py-1 rounded text-xs {% if trade.type == 'BUY' %}bg-blue-100 text-blue-800{% else %}bg-purple-100 text-purple-800{% endif %}">
+                        <span class="px-2 py-1 rounded text-xs {% if trade.type == 'BUY' %}bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300{% else %}bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300{% endif %}">
                             {{ trade.type }}
                         </span>
                     </td>
-                    <td class="py-4 px-6">{{ trade.volume }}</td>
-                    <td class="py-4 px-6">${{ "%.5f"|format(trade.price) }}</td>
+                    <td class="py-4 px-6 text-gray-900 dark:text-white">{{ trade.volume }}</td>
+                    <td class="py-4 px-6 text-gray-900 dark:text-white">${{ "%.5f"|format(trade.entry_price) }}</td>
                     <td class="py-4 px-6">
                         <div class="text-sm">
-                            <div>SL: ${{ "%.5f"|format(trade.sl) if trade.sl else 'N/A' }}</div>
-                            <div>TP: ${{ "%.5f"|format(trade.tp) if trade.tp else 'N/A' }}</div>
+                            <div class="text-gray-900 dark:text-white">SL: ${{ "%.5f"|format(trade.sl) if trade.sl else 'N/A' }}</div>
+                            <div class="text-gray-900 dark:text-white">TP: ${{ "%.5f"|format(trade.tp) if trade.tp else 'N/A' }}</div>
                         </div>
                     </td>
-                    <td class="py-4 px-6 font-bold {% if trade.profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    <td class="py-4 px-6 font-bold {% if trade.profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                         ${{ "%.2f"|format(trade.profit) }}
                     </td>
                     <td class="py-4 px-6">
                         {% if trade.win %}
-                        <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-800">WIN</span>
+                        <span class="px-2 py-1 rounded text-xs bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300">WIN</span>
                         {% else %}
-                        <span class="px-2 py-1 rounded text-xs bg-red-100 text-red-800">LOSS</span>
+                        <span class="px-2 py-1 rounded text-xs bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300">LOSS</span>
                         {% endif %}
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="9" class="py-8 px-6 text-center text-gray-500">
+                    <td colspan="9" class="py-8 px-6 text-center text-gray-500 dark:text-gray-400">
                         No trades found. 
-                        <a href="/sync" class="text-blue-600 hover:text-blue-800">Sync with MT5</a> to get started.
+                        <a href="/sync" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">Sync with MT5</a> to get started.
                     </td>
                 </tr>
                 {% endfor %}
@@ -130,49 +130,49 @@
     
     <!-- Pagination -->
     {% if total_trades > 0 %}
-    <div class="p-6 border-t flex justify-between items-center">
-        <div class="text-gray-600">
+    <div class="p-6 border-t dark:border-gray-700 flex justify-between items-center">
+        <div class="text-gray-600 dark:text-gray-400">
             Page {{ (skip // limit) + 1 }} of {{ (total_trades // limit) + 1 }}
         </div>
         <div class="flex space-x-2">
             {% if skip > 0 %}
             <a href="/trades?skip={{ skip - limit }}&limit={{ limit }}{% if current_symbol %}&symbol={{ current_symbol }}{% endif %}" 
-               class="px-4 py-2 border rounded hover:bg-gray-100">
+               class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">
                 ← Previous
             </a>
             {% endif %}
             
             {% if skip + limit < total_trades %}
             <a href="/trades?skip={{ skip + limit }}&limit={{ limit }}{% if current_symbol %}&symbol={{ current_symbol }}{% endif %}" 
-               class="px-4 py-2 border rounded hover:bg-gray-100">
+               class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">
                 Next →
             </a>
             {% endif %}
         </div>
         
         <div class="flex items-center space-x-2">
-            <span class="text-gray-600">Show:</span>
-            <select onchange="changeLimit(this.value)" class="p-2 border rounded">
+            <span class="text-gray-600 dark:text-gray-400">Show:</span>
+            <select onchange="changeLimit(this.value)" class="p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                 <option value="10" {% if limit == 10 %}selected{% endif %}>10</option>
                 <option value="25" {% if limit == 25 %}selected{% endif %}>25</option>
                 <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
                 <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
             </select>
-            <span class="text-gray-600">trades per page</span>
+            <span class="text-gray-600 dark:text-gray-400">trades per page</span>
         </div>
     </div>
     {% endif %}
 </div>
 
 <!-- Export Section -->
-<div class="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
-    <h3 class="text-lg font-bold mb-4">Export Data</h3>
-    <p class="mb-4 text-gray-600">Export your trading data for analysis in other tools:</p>
+<div class="mt-8 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+    <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Export Data</h3>
+    <p class="mb-4 text-gray-600 dark:text-gray-300">Export your trading data for analysis in other tools:</p>
     <div class="flex space-x-4">
-        <button onclick="exportData('csv')" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        <button onclick="exportData('csv')" class="bg-green-600 dark:bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 dark:hover:bg-green-600">
             Export as CSV
         </button>
-        <button onclick="exportData('json')" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        <button onclick="exportData('json')" class="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600">
             Export as JSON
         </button>
     </div>

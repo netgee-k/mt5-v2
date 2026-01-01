@@ -5,33 +5,105 @@
 
 {% block content %}
 <div class="mb-8">
-    <h1 class="text-3xl font-bold mb-2">Trading Statistics</h1>
-    <p class="text-gray-600">Comprehensive analysis of your trading performance</p>
+    <h1 class="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Trading Statistics</h1>
+    <p class="text-gray-600 dark:text-gray-300">Comprehensive analysis of your trading performance</p>
+</div>
+
+<!-- Filters -->
+<div class="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700 p-6">
+    <h2 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Filter Statistics</h2>
+    <form method="get" action="/stats" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Range</label>
+                <select name="period" id="periodSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="all" {% if period == 'all' %}selected{% endif %}>All Time</option>
+                    <option value="last7" {% if period == 'last7' %}selected{% endif %}>Last 7 Days</option>
+                    <option value="last30" {% if period == 'last30' %}selected{% endif %}>Last 30 Days</option>
+                    <option value="last90" {% if period == 'last90' %}selected{% endif %}>Last 90 Days</option>
+                    <option value="custom" {% if period == 'custom' %}selected{% endif %}>Custom Range</option>
+                </select>
+            </div>
+            
+            <div id="customDateRange" class="{% if period != 'custom' %}hidden{% endif %} md:col-span-2">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">From</label>
+                        <input type="date" name="start_date" value="{{ start_date }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">To</label>
+                        <input type="date" name="end_date" value="{{ end_date }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Symbol</label>
+                <select name="symbol" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="">All Symbols</option>
+                    {% for symbol in available_symbols %}
+                    <option value="{{ symbol }}" {% if selected_symbol == symbol %}selected{% endif %}>{{ symbol }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="text-sm text-gray-600 dark:text-gray-400">
+                Showing stats for: 
+                <span class="font-medium text-gray-900 dark:text-white">
+                    {% if period == 'custom' %}
+                        {{ start_date }} to {{ end_date }}
+                    {% elif period == 'last7' %}
+                        Last 7 days
+                    {% elif period == 'last30' %}
+                        Last 30 days
+                    {% elif period == 'last90' %}
+                        Last 90 days
+                    {% else %}
+                        All time
+                    {% endif %}
+                    {% if selected_symbol %}
+                        - {{ selected_symbol }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
+                    Apply Filters
+                </button>
+                <a href="/stats" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                    Reset
+                </a>
+            </div>
+        </div>
+    </form>
 </div>
 
 <!-- Time Period Stats -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
     <!-- Overall Stats -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-bold mb-4">Overall</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 p-6 border border-gray-200 dark:border-gray-700">
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Overall</h2>
         <div class="space-y-3">
             <div class="flex justify-between">
-                <span class="text-gray-600">Total Trades:</span>
-                <span class="font-bold">{{ overall_stats.total_trades }}</span>
+                <span class="text-gray-600 dark:text-gray-400">Total Trades:</span>
+                <span class="font-bold text-gray-900 dark:text-white">{{ overall_stats.total_trades }}</span>
             </div>
             <div class="flex justify-between">
-                <span class="text-gray-600">Total Profit:</span>
-                <span class="font-bold {% if overall_stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                <span class="text-gray-600 dark:text-gray-400">Total Profit:</span>
+                <span class="font-bold {% if overall_stats.total_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                     ${{ "%.2f"|format(overall_stats.total_profit) }}
                 </span>
             </div>
             <div class="flex justify-between">
-                <span class="text-gray-600">Win Rate:</span>
-                <span class="font-bold">{{ "%.1f"|format(overall_stats.win_rate) }}%</span>
+                <span class="text-gray-600 dark:text-gray-400">Win Rate:</span>
+                <span class="font-bold text-gray-900 dark:text-white">{{ "%.1f"|format(overall_stats.win_rate) }}%</span>
             </div>
             <div class="flex justify-between">
-                <span class="text-gray-600">Avg Profit/Trade:</span>
-                <span class="font-bold {% if overall_stats.avg_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                <span class="text-gray-600 dark:text-gray-400">Avg Profit/Trade:</span>
+                <span class="font-bold {% if overall_stats.avg_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                     ${{ "%.2f"|format(overall_stats.avg_profit) }}
                 </span>
             </div>
@@ -39,26 +111,26 @@
     </div>
 
     <!-- Last 30 Days -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-bold mb-4">Last 30 Days</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 p-6 border border-gray-200 dark:border-gray-700">
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Last 30 Days</h2>
         <div class="space-y-3">
             <div class="flex justify-between">
-                <span class="text-gray-600">Total Trades:</span>
-                <span class="font-bold">{{ monthly_stats.total_trades }}</span>
+                <span class="text-gray-600 dark:text-gray-400">Total Trades:</span>
+                <span class="font-bold text-gray-900 dark:text-white">{{ monthly_stats.total_trades }}</span>
             </div>
             <div class="flex justify-between">
-                <span class="text-gray-600">Total Profit:</span>
-                <span class="font-bold {% if monthly_stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                <span class="text-gray-600 dark:text-gray-400">Total Profit:</span>
+                <span class="font-bold {% if monthly_stats.total_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                     ${{ "%.2f"|format(monthly_stats.total_profit) }}
                 </span>
             </div>
             <div class="flex justify-between">
-                <span class="text-gray-600">Win Rate:</span>
-                <span class="font-bold">{{ "%.1f"|format(monthly_stats.win_rate) }}%</span>
+                <span class="text-gray-600 dark:text-gray-400">Win Rate:</span>
+                <span class="font-bold text-gray-900 dark:text-white">{{ "%.1f"|format(monthly_stats.win_rate) }}%</span>
             </div>
             <div class="flex justify-between">
-                <span class="text-gray-600">Avg Profit/Trade:</span>
-                <span class="font-bold {% if monthly_stats.avg_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                <span class="text-gray-600 dark:text-gray-400">Avg Profit/Trade:</span>
+                <span class="font-bold {% if monthly_stats.avg_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                     ${{ "%.2f"|format(monthly_stats.avg_profit) }}
                 </span>
             </div>
@@ -66,26 +138,26 @@
     </div>
 
     <!-- Last 7 Days -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-bold mb-4">Last 7 Days</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 p-6 border border-gray-200 dark:border-gray-700">
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Last 7 Days</h2>
         <div class="space-y-3">
             <div class="flex justify-between">
-                <span class="text-gray-600">Total Trades:</span>
-                <span class="font-bold">{{ weekly_stats.total_trades }}</span>
+                <span class="text-gray-600 dark:text-gray-400">Total Trades:</span>
+                <span class="font-bold text-gray-900 dark:text-white">{{ weekly_stats.total_trades }}</span>
             </div>
             <div class="flex justify-between">
-                <span class="text-gray-600">Total Profit:</span>
-                <span class="font-bold {% if weekly_stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                <span class="text-gray-600 dark:text-gray-400">Total Profit:</span>
+                <span class="font-bold {% if weekly_stats.total_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                     ${{ "%.2f"|format(weekly_stats.total_profit) }}
                 </span>
             </div>
             <div class="flex justify-between">
-                <span class="text-gray-600">Win Rate:</span>
-                <span class="font-bold">{{ "%.1f"|format(weekly_stats.win_rate) }}%</span>
+                <span class="text-gray-600 dark:text-gray-400">Win Rate:</span>
+                <span class="font-bold text-gray-900 dark:text-white">{{ "%.1f"|format(weekly_stats.win_rate) }}%</span>
             </div>
             <div class="flex justify-between">
-                <span class="text-gray-600">Avg Profit/Trade:</span>
-                <span class="font-bold {% if weekly_stats.avg_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                <span class="text-gray-600 dark:text-gray-400">Avg Profit/Trade:</span>
+                <span class="font-bold {% if weekly_stats.avg_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                     ${{ "%.2f"|format(weekly_stats.avg_profit) }}
                 </span>
             </div>
@@ -95,16 +167,16 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
     <!-- Symbol Performance -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="p-6 border-b">
-            <h2 class="text-xl font-bold">Symbol Performance</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700">
+        <div class="p-6 border-b dark:border-gray-700">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">Symbol Performance</h2>
         </div>
         <div class="p-6">
             {% if symbol_stats %}
             <div class="overflow-x-auto">
                 <table class="min-w-full">
                     <thead>
-                        <tr class="text-left text-gray-500 text-sm">
+                        <tr class="text-left text-gray-500 dark:text-gray-400 text-sm">
                             <th class="pb-2">Symbol</th>
                             <th class="pb-2 text-right">Trades</th>
                             <th class="pb-2 text-right">Win Rate</th>
@@ -113,13 +185,24 @@
                     </thead>
                     <tbody>
                         {% for stat in symbol_stats %}
-                        <tr class="border-t">
-                            <td class="py-3 font-medium">{{ stat.symbol }}</td>
-                            <td class="py-3 text-right">{{ stat.total_trades }}</td>
+                        <tr class="border-t dark:border-gray-700">
+                            <td class="py-3 font-medium text-gray-900 dark:text-white">{{ stat.symbol }}</td>
+                            <td class="py-3 text-right text-gray-900 dark:text-white">{{ stat.total_trades }}</td>
                             <td class="py-3 text-right">
-                                {{ "%.1f"|format((stat.win_count / stat.total_trades * 100) if stat.total_trades > 0 else 0) }}%
+                                {% set win_rate = (stat.win_count / stat.total_trades * 100) if stat.total_trades > 0 else 0 %}
+                                <div class="flex items-center justify-end gap-2">
+                                    <span class="text-gray-900 dark:text-white">{{ "%.1f"|format(win_rate) }}%</span>
+                                    <div class="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                        {% set win_width = win_rate|int %}
+                                        {% set loss_width = 100 - win_width %}
+                                        <div class="h-full flex">
+                                            <div class="bg-green-500 dark:bg-green-400" style="width: {{ win_width }}%"></div>
+                                            <div class="bg-red-500 dark:bg-red-400" style="width: {{ loss_width }}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
-                            <td class="py-3 text-right {% if stat.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            <td class="py-3 text-right font-medium {% if stat.total_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                                 ${{ "%.2f"|format(stat.total_profit) }}
                             </td>
                         </tr>
@@ -128,15 +211,15 @@
                 </table>
             </div>
             {% else %}
-            <p class="text-gray-500 text-center py-8">No symbol data available</p>
+            <p class="text-gray-500 dark:text-gray-400 text-center py-8">No symbol data available</p>
             {% endif %}
         </div>
     </div>
 
     <!-- Hourly Performance -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="p-6 border-b">
-            <h2 class="text-xl font-bold">Trading by Hour</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700">
+        <div class="p-6 border-b dark:border-gray-700">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">Trading by Hour</h2>
         </div>
         <div class="p-6">
             {% if hourly_stats %}
@@ -144,23 +227,25 @@
                 {% for hour_stat in hourly_stats %}
                 <div>
                     <div class="flex justify-between mb-1">
-                        <span class="text-sm font-medium">
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">
                             {{ hour_stat.hour }}:00 - {{ hour_stat.hour }}:59
                         </span>
-                        <span class="text-sm text-gray-600">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">
                             {{ hour_stat.total_trades }} trades
                         </span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-blue-600 h-2 rounded-full" 
-                             style="width: {{ (hour_stat.total_trades / (hourly_stats|map(attribute='total_trades')|max) * 100) if (hourly_stats|map(attribute='total_trades')|max) > 0 else 0 }}%">
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        {% set max_trades = hourly_stats|map(attribute='total_trades')|max %}
+                        {% set bar_width = (hour_stat.total_trades / max_trades * 100) if max_trades > 0 else 0 %}
+                        <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full" 
+                             style="width: {{ bar_width }}%">
                         </div>
                     </div>
                     <div class="flex justify-between mt-1 text-sm">
-                        <span class="text-gray-600">
+                        <span class="text-gray-600 dark:text-gray-400">
                             Win Rate: {{ "%.1f"|format(hour_stat.win_rate) }}%
                         </span>
-                        <span class="font-medium {% if hour_stat.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                        <span class="font-medium {% if hour_stat.total_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                             ${{ "%.2f"|format(hour_stat.total_profit) }}
                         </span>
                     </div>
@@ -168,72 +253,117 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-gray-500 text-center py-8">No hourly data available</p>
+            <p class="text-gray-500 dark:text-gray-400 text-center py-8">No hourly data available</p>
             {% endif %}
         </div>
     </div>
 </div>
 
 <!-- Performance Metrics -->
-<div class="mt-8 bg-white rounded-lg shadow p-6">
-    <h2 class="text-xl font-bold mb-4">Performance Metrics</h2>
+<div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 p-6 border border-gray-200 dark:border-gray-700">
+    <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Performance Metrics</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="text-center p-4 bg-gray-50 rounded">
-            <div class="text-2xl font-bold {% if overall_stats.avg_profit > 0 %}profit-positive{% endif %}">
+        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded">
+            <div class="text-2xl font-bold {% if overall_stats.avg_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}text-gray-900 dark:text-white{% endif %}">
                 ${{ "%.2f"|format(overall_stats.avg_profit) }}
             </div>
-            <div class="text-gray-600 text-sm">Average Profit</div>
+            <div class="text-gray-600 dark:text-gray-400 text-sm">Average Profit</div>
         </div>
-        <div class="text-center p-4 bg-gray-50 rounded">
-            <div class="text-2xl font-bold">
+        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded">
+            <div class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ "%.1f"|format(overall_stats.win_rate) }}%
             </div>
-            <div class="text-gray-600 text-sm">Win Rate</div>
+            <div class="text-gray-600 dark:text-gray-400 text-sm">Win Rate</div>
         </div>
-        <div class="text-center p-4 bg-gray-50 rounded">
-            <div class="text-2xl font-bold">
+        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded">
+            <div class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ overall_stats.total_trades }}
             </div>
-            <div class="text-gray-600 text-sm">Total Trades</div>
+            <div class="text-gray-600 dark:text-gray-400 text-sm">Total Trades</div>
         </div>
-        <div class="text-center p-4 bg-gray-50 rounded">
-            <div class="text-2xl font-bold {% if overall_stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded">
+            <div class="text-2xl font-bold {% if overall_stats.total_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                 ${{ "%.2f"|format(overall_stats.total_profit) }}
             </div>
-            <div class="text-gray-600 text-sm">Total Profit</div>
+            <div class="text-gray-600 dark:text-gray-400 text-sm">Total Profit</div>
         </div>
     </div>
 </div>
 
 <!-- Key Insights -->
-<div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-    <h3 class="text-lg font-bold mb-4">💡 Key Insights</h3>
-    <div class="space-y-3">
+<div class="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+    <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">💡 Key Insights</h3>
+    <div class="space-y-3 text-gray-700 dark:text-gray-300">
         {% if symbol_stats|length > 0 %}
             {% set best_symbol = symbol_stats|sort(attribute='total_profit', reverse=true)|first %}
             {% set worst_symbol = symbol_stats|sort(attribute='total_profit')|first %}
             
             {% if best_symbol.total_profit > 0 %}
-            <p>✅ Your best performing symbol is <strong>{{ best_symbol.symbol }}</strong> with ${{ "%.2f"|format(best_symbol.total_profit) }} profit.</p>
+            <p>✅ Your best performing symbol is <strong class="text-gray-900 dark:text-white">{{ best_symbol.symbol }}</strong> with <strong class="text-green-600 dark:text-green-400">${{ "%.2f"|format(best_symbol.total_profit) }}</strong> profit.</p>
             {% endif %}
             
             {% if worst_symbol.total_profit < 0 %}
-            <p>⚠️ Your worst performing symbol is <strong>{{ worst_symbol.symbol }}</strong> with ${{ "%.2f"|format(worst_symbol.total_profit) }} loss.</p>
+            <p>⚠️ Your worst performing symbol is <strong class="text-gray-900 dark:text-white">{{ worst_symbol.symbol }}</strong> with <strong class="text-red-600 dark:text-red-400">${{ "%.2f"|format(worst_symbol.total_profit) }}</strong> loss.</p>
             {% endif %}
         {% endif %}
         
         {% if hourly_stats|length > 0 %}
             {% set best_hour = hourly_stats|sort(attribute='total_profit', reverse=true)|first %}
             {% if best_hour.total_profit > 0 %}
-            <p>⏰ Your most profitable trading hour is <strong>{{ best_hour.hour }}:00-{{ best_hour.hour }}:59</strong>.</p>
+            <p>⏰ Your most profitable trading hour is <strong class="text-gray-900 dark:text-white">{{ best_hour.hour }}:00-{{ best_hour.hour }}:59</strong>.</p>
             {% endif %}
         {% endif %}
         
         {% if overall_stats.win_rate > 50 %}
-        <p>🎯 Your win rate of {{ "%.1f"|format(overall_stats.win_rate) }}% is above 50% - good job!</p>
+        <p>🎯 Your win rate of <strong class="text-green-600 dark:text-green-400">{{ "%.1f"|format(overall_stats.win_rate) }}%</strong> is above 50% - good job!</p>
         {% else %}
-        <p>📊 Your win rate is {{ "%.1f"|format(overall_stats.win_rate) }}%. Consider focusing on risk management.</p>
+        <p>📊 Your win rate is <strong class="text-gray-900 dark:text-white">{{ "%.1f"|format(overall_stats.win_rate) }}%</strong>. Consider focusing on risk management.</p>
+        {% endif %}
+        
+        {% if overall_stats.avg_profit > 0 %}
+        <p>📈 Your average profit per trade is positive at <strong class="text-green-600 dark:text-green-400">${{ "%.2f"|format(overall_stats.avg_profit) }}</strong>.</p>
+        {% else %}
+        <p>📉 Your average profit per trade is negative at <strong class="text-red-600 dark:text-red-400">${{ "%.2f"|format(overall_stats.avg_profit) }}</strong>.</p>
         {% endif %}
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const periodSelect = document.getElementById('periodSelect');
+    const customDateRange = document.getElementById('customDateRange');
+    
+    // Toggle custom date range visibility
+    function toggleCustomDateRange() {
+        if (periodSelect.value === 'custom') {
+            customDateRange.classList.remove('hidden');
+        } else {
+            customDateRange.classList.add('hidden');
+        }
+    }
+    
+    // Set today as default end date if not set
+    const endDateInput = document.querySelector('input[name="end_date"]');
+    if (endDateInput && !endDateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        endDateInput.value = today;
+    }
+    
+    // Set start date to 30 days ago if not set
+    const startDateInput = document.querySelector('input[name="start_date"]');
+    if (startDateInput && !startDateInput.value) {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+    }
+    
+    // Initialize
+    toggleCustomDateRange();
+    
+    // Event listener
+    periodSelect.addEventListener('change', toggleCustomDateRange);
+    
+    // Auto-submit when symbol changes if on mobile? Or keep as is
+});
+</script>
 {% endblock %}

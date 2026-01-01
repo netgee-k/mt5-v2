@@ -1,0 +1,599 @@
+<!-- app/templates/settings.html -->
+{% extends "base.html" %}
+
+{% block title %}Settings - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+      <i class="fas fa-cog mr-2"></i> Settings
+    </h1>
+    <p class="text-gray-600 dark:text-gray-300 mt-2">Manage your account and application preferences</p>
+  </div>
+
+  <!-- Success/Error Messages -->
+  {% if success %}
+  <div class="mb-6 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-400 p-4 rounded-r-lg">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center">
+        <i class="fas fa-check-circle text-green-500 dark:text-green-400 mr-3"></i>
+        <span class="text-green-700 dark:text-green-300">{{ success }}</span>
+      </div>
+      <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-green-500 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-400 p-4 rounded-r-lg">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center">
+        <i class="fas fa-exclamation-circle text-red-500 dark:text-red-400 mr-3"></i>
+        <span class="text-red-700 dark:text-red-300">{{ error }}</span>
+      </div>
+      <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Left Navigation -->
+    <div class="lg:w-1/4">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <button onclick="showTab('profile')" class="tab-btn w-full text-left px-6 py-4 font-medium bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600">
+          <i class="fas fa-user mr-3"></i> Profile
+        </button>
+        <button onclick="showTab('mt5')" class="tab-btn w-full text-left px-6 py-4 font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700">
+          <i class="fas fa-exchange-alt mr-3"></i> MT5 Credentials
+        </button>
+        <button onclick="showTab('preferences')" class="tab-btn w-full text-left px-6 py-4 font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700">
+          <i class="fas fa-palette mr-3"></i> Preferences
+        </button>
+        <button onclick="showTab('security')" class="tab-btn w-full text-left px-6 py-4 font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700">
+          <i class="fas fa-shield-alt mr-3"></i> Security
+        </button>
+        <button onclick="showTab('notifications')" class="tab-btn w-full text-left px-6 py-4 font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700">
+          <i class="fas fa-bell mr-3"></i> Notifications
+        </button>
+      </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="lg:w-3/4">
+      <!-- Profile Tab -->
+      <div id="profileTab" class="tab-content bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700">
+        <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-500 dark:to-blue-400 text-white">
+          <h2 class="text-xl font-semibold">
+            <i class="fas fa-user mr-2"></i> Profile Settings
+          </h2>
+        </div>
+        <div class="p-6">
+          <form method="post" action="/settings/profile" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+                <input type="email" value="{{ user.email }}" disabled class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Email cannot be changed</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                <input type="text" name="username" value="{{ user.username or '' }}" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+              <input type="text" name="full_name" value="{{ user.full_name or '' }}" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account Status</label>
+              <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-1 text-xs font-medium rounded-full {% if user.is_active %}bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300{% else %}bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300{% endif %}">
+                  {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+                <span class="px-3 py-1 text-xs font-medium rounded-full {% if user.is_verified %}bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300{% else %}bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300{% endif %}">
+                  {% if user.is_verified %}Verified{% else %}Not Verified{% endif %}
+                </span>
+                {% if user.is_admin %}
+                <span class="px-3 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300">Administrator</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Member Since</label>
+              <p class="text-gray-900 dark:text-white">
+                {% if user.created_at %}
+                  {{ user.created_at.strftime('%B %d, %Y') }}
+                {% else %}
+                  Not available
+                {% endif %}
+              </p>
+            </div>
+
+            <button type="submit" class="bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
+              <i class="fas fa-save mr-2"></i> Update Profile
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- MT5 Tab -->
+      <div id="mt5Tab" class="tab-content bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700 hidden">
+        <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-500 dark:to-blue-400 text-white">
+          <h2 class="text-xl font-semibold">
+            <i class="fas fa-exchange-alt mr-2"></i> MT5 Trading Credentials
+          </h2>
+        </div>
+        <div class="p-6">
+          <form method="post" action="/settings/mt5" class="space-y-6">
+            <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-4 rounded-r-lg">
+              <div class="flex items-start">
+                <i class="fas fa-info-circle text-blue-500 dark:text-blue-400 mt-0.5 mr-3"></i>
+                <p class="text-blue-700 dark:text-blue-300 text-sm">Your MT5 credentials are stored securely and used only for syncing trades.</p>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">MT5 Server</label>
+              <input type="text" name="mt5_server" value="{{ user.mt5_server or '' }}" placeholder="Example: JustMarkets-Live, MetaQuotes-Demo" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Enter your broker's MT5 server name</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">MT5 Login Number</label>
+                <input type="number" name="mt5_login" value="{{ user.mt5_login or '' }}" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Your MT5 account number</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">MT5 Password</label>
+                <div class="relative">
+                  <input type="password" name="mt5_password" id="mt5_password" value="{{ user.mt5_password or '' }}" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-10">
+                  <button type="button" onclick="togglePassword('mt5_password')" class="absolute right-3 top-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Your MT5 trading password</p>
+              </div>
+            </div>
+
+            {% if user.mt5_server and user.mt5_login %}
+            <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-400 p-4 rounded-r-lg">
+              <div class="flex items-start">
+                <i class="fas fa-check-circle text-green-500 dark:text-green-400 mt-0.5 mr-3"></i>
+                <p class="text-green-700 dark:text-green-300 text-sm">MT5 credentials are configured. You can sync trades from the Sync page.</p>
+              </div>
+            </div>
+            {% else %}
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-400 p-4 rounded-r-lg">
+              <div class="flex items-start">
+                <i class="fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-400 mt-0.5 mr-3"></i>
+                <p class="text-yellow-700 dark:text-yellow-300 text-sm">MT5 credentials are not set. Please configure them to sync trades.</p>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="flex flex-wrap gap-3">
+              <button type="submit" class="bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
+                <i class="fas fa-save mr-2"></i> Save MT5 Credentials
+              </button>
+              <a href="/sync" class="bg-green-600 dark:bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition inline-flex items-center">
+                <i class="fas fa-sync mr-2"></i> Go to Sync Page
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Preferences Tab -->
+      <div id="preferencesTab" class="tab-content bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700 hidden">
+        <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-500 dark:to-blue-400 text-white">
+          <h2 class="text-xl font-semibold">
+            <i class="fas fa-palette mr-2"></i> Display Preferences
+          </h2>
+        </div>
+        <div class="p-6">
+          <form method="post" action="/settings/preferences" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Appearance</h3>
+                
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Theme</label>
+                  <select name="theme" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="light" {% if user.theme == 'light' %}selected{% endif %}>Light Mode</option>
+                    <option value="dark" {% if user.theme == 'dark' %}selected{% endif %}>Dark Mode</option>
+                    <option value="auto" {% if user.theme == 'auto' %}selected{% endif %}>Auto (System)</option>
+                  </select>
+                </div>
+
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Timezone</label>
+                  <select name="timezone" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="UTC" {% if user.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                    <option value="EST" {% if user.timezone == 'EST' %}selected{% endif %}>Eastern Time (EST)</option>
+                    <option value="CST" {% if user.timezone == 'CST' %}selected{% endif %}>Central Time (CST)</option>
+                    <option value="MST" {% if user.timezone == 'MST' %}selected{% endif %}>Mountain Time (MST)</option>
+                    <option value="PST" {% if user.timezone == 'PST' %}selected{% endif %}>Pacific Time (PST)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Chart Settings</h3>
+                
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Chart Theme</label>
+                  <select name="chart_theme" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="light" {% if user.user_settings and user.user_settings.chart_theme == 'light' %}selected{% endif %}>Light</option>
+                    <option value="dark" {% if user.user_settings and user.user_settings.chart_theme == 'dark' %}selected{% endif %}>Dark</option>
+                  </select>
+                </div>
+
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Chart Type</label>
+                  <select name="chart_type" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="candlestick" {% if not user.user_settings or user.user_settings.chart_type == 'candlestick' %}selected{% endif %}>Candlestick</option>
+                    <option value="line" {% if user.user_settings and user.user_settings.chart_type == 'line' %}selected{% endif %}>Line</option>
+                    <option value="bar" {% if user.user_settings and user.user_settings.chart_type == 'bar' %}selected{% endif %}>Bar</option>
+                    <option value="area" {% if user.user_settings and user.user_settings.chart_type == 'area' %}selected{% endif %}>Area</option>
+                  </select>
+                </div>
+
+                <div class="space-y-2">
+                  <div class="flex items-center">
+                    <input type="checkbox" name="show_grid" id="show_grid" 
+                           {% if not user.user_settings or user.user_settings.show_grid %}checked{% endif %}
+                           class="h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700">
+                    <label for="show_grid" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Show Grid Lines</label>
+                  </div>
+                  <div class="flex items-center">
+                    <input type="checkbox" name="show_volume" id="show_volume"
+                           {% if user.user_settings and user.user_settings.show_volume %}checked{% endif %}
+                           class="h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700">
+                    <label for="show_volume" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Show Volume</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button type="submit" class="bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
+                <i class="fas fa-save mr-2"></i> Save Preferences
+              </button>
+              <button type="button" onclick="resetPreferences()" class="ml-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                <i class="fas fa-undo mr-2"></i> Reset to Defaults
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Security Tab -->
+      <div id="securityTab" class="tab-content bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700 hidden">
+        <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-500 dark:to-blue-400 text-white">
+          <h2 class="text-xl font-semibold">
+            <i class="fas fa-shield-alt mr-2"></i> Security Settings
+          </h2>
+        </div>
+        <div class="p-6">
+          <form method="post" action="/settings/security" class="space-y-6">
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-400 p-4 rounded-r-lg">
+              <div class="flex items-start">
+                <i class="fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-400 mt-0.5 mr-3"></i>
+                <p class="text-yellow-700 dark:text-yellow-300 text-sm">Changing your password will log you out of all devices.</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
+                <div class="relative">
+                  <input type="password" name="new_password" id="new_password" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-10">
+                  <button type="button" onclick="togglePassword('new_password')" class="absolute right-3 top-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum 8 characters</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm New Password</label>
+                <div class="relative">
+                  <input type="password" id="confirm_new_password" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-10">
+                  <button type="button" onclick="togglePassword('confirm_new_password')" class="absolute right-3 top-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password Strength:</h3>
+              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div id="password-strength-bar" class="bg-red-500 dark:bg-red-400 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <p id="password-strength-text" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Enter a password to check strength</p>
+            </div>
+
+            <button type="submit" class="bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
+              <i class="fas fa-key mr-2"></i> Change Password
+            </button>
+
+            <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Session Management</h3>
+              <div class="flex flex-wrap gap-3">
+                <a href="/logout?all=true" class="bg-red-600 dark:bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition inline-flex items-center">
+                  <i class="fas fa-sign-out-alt mr-2"></i> Logout All Devices
+                </a>
+                <a href="/logout" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition inline-flex items-center">
+                  <i class="fas fa-sign-out-alt mr-2"></i> Logout Current Session
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Notifications Tab -->
+      <div id="notificationsTab" class="tab-content bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700 hidden">
+        <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-500 dark:to-blue-400 text-white">
+          <h2 class="text-xl font-semibold">
+            <i class="fas fa-bell mr-2"></i> Notification Settings
+          </h2>
+        </div>
+        <div class="p-6">
+          <form method="post" action="/settings/preferences" class="space-y-6">
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Email Notifications</h3>
+              <div class="flex items-center mb-3">
+                <div class="relative inline-block w-12 mr-2 align-middle select-none">
+                  <input type="checkbox" name="email_notifications" id="email_notifications" 
+                         {% if not user.user_settings or user.user_settings.email_notifications %}checked{% endif %}
+                         class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white dark:bg-gray-300 border-4 border-gray-300 dark:border-gray-600 appearance-none cursor-pointer transition-all duration-300"
+                         style="top: -2px; left: -2px;">
+                  <label for="email_notifications" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 dark:bg-gray-600 cursor-pointer transition-all duration-300"></label>
+                </div>
+                <label for="email_notifications" class="text-gray-700 dark:text-gray-300">Enable Email Notifications</label>
+              </div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Receive email notifications for account activity and trade alerts</p>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Trade Alerts</h3>
+              <div class="flex items-center mb-3">
+                <div class="relative inline-block w-12 mr-2 align-middle select-none">
+                  <input type="checkbox" name="trade_alerts" id="trade_alerts"
+                         {% if not user.user_settings or user.user_settings.trade_alerts %}checked{% endif %}
+                         class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white dark:bg-gray-300 border-4 border-gray-300 dark:border-gray-600 appearance-none cursor-pointer transition-all duration-300"
+                         style="top: -2px; left: -2px;">
+                  <label for="trade_alerts" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 dark:bg-gray-600 cursor-pointer transition-all duration-300"></label>
+                </div>
+                <label for="trade_alerts" class="text-gray-700 dark:text-gray-300">Enable Trade Alerts</label>
+              </div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Get notified about important trading events and market conditions</p>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Report Frequency</h3>
+              <select name="report_frequency" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                <option value="daily" {% if user.user_settings and user.user_settings.report_frequency == 'daily' %}selected{% endif %}>Daily Reports</option>
+                <option value="weekly" {% if not user.user_settings or user.user_settings.report_frequency == 'weekly' %}selected{% endif %}>Weekly Reports</option>
+                <option value="monthly" {% if user.user_settings and user.user_settings.report_frequency == 'monthly' %}selected{% endif %}>Monthly Reports</option>
+                <option value="never" {% if user.user_settings and user.user_settings.report_frequency == 'never' %}selected{% endif %}>Never</option>
+              </select>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Choose how often to receive trading performance reports</p>
+            </div>
+
+            <button type="submit" class="bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
+              <i class="fas fa-save mr-2"></i> Save Notification Settings
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INLINE JAVASCRIPT -->
+<script>
+// Tab switching functionality
+function showTab(tabName) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(tab => {
+    tab.classList.add('hidden');
+  });
+  
+  // Show selected tab
+  const selectedTab = document.getElementById(tabName + 'Tab');
+  if (selectedTab) {
+    selectedTab.classList.remove('hidden');
+  }
+  
+  // Update button styles
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('bg-blue-600', 'dark:bg-blue-500', 'text-white', 'hover:bg-blue-700', 'dark:hover:bg-blue-600');
+    btn.classList.add('text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-50', 'dark:hover:bg-gray-700');
+  });
+  
+  // Style active button - using a simple text check
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const text = btn.textContent || btn.innerText;
+    if (text.toLowerCase().includes(tabName.toLowerCase())) {
+      btn.classList.remove('text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-50', 'dark:hover:bg-gray-700');
+      btn.classList.add('bg-blue-600', 'dark:bg-blue-500', 'text-white', 'hover:bg-blue-700', 'dark:hover:bg-blue-600');
+    }
+  });
+}
+
+// Password toggle functionality
+function togglePassword(inputId) {
+  const input = document.getElementById(inputId);
+  const icon = input.parentElement.querySelector('i');
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fas fa-eye';
+  }
+}
+
+// Password strength checker
+function checkPasswordStrength(password) {
+  let strength = 0;
+  const bar = document.getElementById('password-strength-bar');
+  const text = document.getElementById('password-strength-text');
+  
+  if (!bar || !text) return;
+  
+  if (password.length >= 8) strength++;
+  if (password.match(/[a-z]/)) strength++;
+  if (password.match(/[A-Z]/)) strength++;
+  if (password.match(/[0-9]/)) strength++;
+  if (password.match(/[^a-zA-Z0-9]/)) strength++;
+  
+  const colors = ['bg-red-500 dark:bg-red-400', 'bg-yellow-500 dark:bg-yellow-400', 'bg-blue-500 dark:bg-blue-400', 'bg-green-500 dark:bg-green-400', 'bg-green-600 dark:bg-green-500'];
+  const texts = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+  const widths = [20, 40, 60, 80, 100];
+  
+  bar.className = colors[strength] + ' h-2 rounded-full transition-all duration-300';
+  bar.style.width = `${widths[strength]}%`;
+  text.textContent = texts[strength];
+  text.className = strength >= 3 ? 'text-xs text-green-600 dark:text-green-400 mt-1' : 'text-xs text-red-600 dark:text-red-400 mt-1';
+}
+
+// Reset preferences
+function resetPreferences() {
+  if (confirm('Reset all preferences to default values?')) {
+    document.querySelector('select[name="theme"]').value = 'light';
+    document.querySelector('select[name="timezone"]').value = 'UTC';
+    document.querySelector('select[name="chart_theme"]').value = 'light';
+    document.querySelector('select[name="chart_type"]').value = 'candlestick';
+    document.getElementById('show_grid').checked = true;
+    document.getElementById('show_volume').checked = false;
+    document.getElementById('email_notifications').checked = true;
+    document.getElementById('trade_alerts').checked = true;
+    document.querySelector('select[name="report_frequency"]').value = 'weekly';
+  }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Show profile tab by default
+  showTab('profile');
+  
+  // Initialize password strength checker
+  const passwordInput = document.getElementById('new_password');
+  const confirmInput = document.getElementById('confirm_new_password');
+  
+  if (passwordInput) {
+    passwordInput.addEventListener('input', function() {
+      checkPasswordStrength(this.value);
+      
+      // Check password confirmation
+      if (confirmInput && confirmInput.value) {
+        if (passwordInput.value === confirmInput.value) {
+          confirmInput.setCustomValidity('');
+        } else {
+          confirmInput.setCustomValidity("Passwords don't match");
+        }
+      }
+    });
+    
+    if (confirmInput) {
+      confirmInput.addEventListener('input', function() {
+        if (passwordInput.value === this.value) {
+          this.setCustomValidity('');
+        } else {
+          this.setCustomValidity("Passwords don't match");
+        }
+      });
+    }
+  }
+  
+  // Toggle switch styling
+  const toggleCheckboxes = document.querySelectorAll('.toggle-checkbox');
+  toggleCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      const label = this.nextElementSibling;
+      if (this.checked) {
+        label.style.backgroundColor = '#2563eb'; // blue-600
+        this.style.borderColor = '#2563eb';
+      } else {
+        label.style.backgroundColor = '#d1d5db'; // gray-300
+        this.style.borderColor = '#d1d5db';
+      }
+    });
+    
+    // Initialize toggle colors
+    const label = checkbox.nextElementSibling;
+    if (checkbox.checked) {
+      label.style.backgroundColor = '#2563eb';
+      checkbox.style.borderColor = '#2563eb';
+    } else {
+      label.style.backgroundColor = '#d1d5db';
+      checkbox.style.borderColor = '#d1d5db';
+    }
+  });
+  
+  // Auto-switch to MT5 tab if credentials are not set
+  {% if not user.mt5_server or not user.mt5_login %}
+  setTimeout(() => {
+    showTab('mt5');
+  }, 100);
+  {% endif %}
+});
+</script>
+
+<style>
+/* Toggle switch styling */
+.toggle-checkbox:checked {
+  right: 0;
+  border-color: #2563eb;
+}
+
+.toggle-checkbox:checked + .toggle-label {
+  background-color: #2563eb;
+}
+
+/* Button hover effects */
+.tab-btn {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Animation for tab content */
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Dark mode toggle styling */
+@media (prefers-color-scheme: dark) {
+  .toggle-checkbox:checked + .toggle-label {
+    background-color: #3b82f6; /* blue-500 */
+  }
+  
+  .toggle-checkbox {
+    border-color: #4b5563; /* gray-600 */
+  }
+  
+  .toggle-label {
+    background-color: #4b5563; /* gray-600 */
+  }
+}
+</style>
+{% endblock %}

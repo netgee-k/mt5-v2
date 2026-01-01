@@ -1,89 +1,130 @@
-# app/schemas.py - FINAL FIXED VERSION
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, EmailStr
+from typing import Optional, List
 from datetime import datetime
-from typing import Optional
-
-# Trade schemas
-class TradeBase(BaseModel):
-    ticket: int
-    position_id: int
-    time: datetime
-    type: str
-    symbol: str
-    volume: float
-    price: float
-    profit: float
-
-class TradeCreate(TradeBase):
-    sl: Optional[float] = 0
-    tp: Optional[float] = 0
-    time_close: Optional[datetime] = None
-    price_close: Optional[float] = None
-    commission: float = 0
-    swap: float = 0
-    comment: Optional[str] = ""
-    # NO win field here - it's calculated by crud.py
-    
-    class Config:
-        from_attributes = True
-
-class Trade(TradeBase):
-    id: int
-    sl: Optional[float] = 0
-    tp: Optional[float] = 0
-    time_close: Optional[datetime] = None
-    price_close: Optional[float] = None
-    commission: float = 0
-    swap: float = 0
-    comment: Optional[str] = ""
-    duration_minutes: Optional[int] = None
-    pips: Optional[float] = None
-    win: Optional[bool] = None
-    synced_at: datetime
-    
-    class Config:
-        from_attributes = True
 
 # User schemas
 class UserBase(BaseModel):
-    username: str
-    email: str
+    email: EmailStr
+    username: Optional[str] = None
+    full_name: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
 
-class User(UserBase):
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    full_name: Optional[str] = None
+    current_password: Optional[str] = None
+    new_password: Optional[str] = None
+
+class UserMT5Credentials(BaseModel):
+    mt5_server: str
+    mt5_login: int
+    mt5_password: str
+
+class UserSettingsUpdate(BaseModel):
+    theme: Optional[str] = None
+    timezone: Optional[str] = None
+    chart_theme: Optional[str] = None
+    chart_type: Optional[str] = None
+    show_grid: Optional[bool] = None
+    show_volume: Optional[bool] = None
+    email_notifications: Optional[bool] = None
+    trade_alerts: Optional[bool] = None
+
+class UserInDB(UserBase):
     id: int
     is_active: bool
+    is_verified: bool
+    is_admin: bool
+    created_at: datetime
+    mt5_server: Optional[str] = None
+    mt5_login: Optional[int] = None
     
-    class Config:
-        from_attributes = True
+    # FIX: Use model_config instead of inner Config class
+    model_config = ConfigDict(from_attributes=True)
+
+class UserResponse(UserInDB):
+    pass
 
 # Token schemas
 class Token(BaseModel):
     access_token: str
-    token_type: str
+    refresh_token: str
+    token_type: str = "bearer"
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    email: Optional[str] = None
+
+# Email schemas
+class EmailSchema(BaseModel):
+    email: List[EmailStr]
+
+# Trade schemas (updated)
+class TradeBase(BaseModel):
+    ticket: int
+    symbol: str
+    type: str
+    volume: float
+    entry_price: float
+    exit_price: float
+    profit: float
+    commission: float
+    swap: float
+    time: datetime
+    time_close: Optional[datetime] = None
+
+class TradeCreate(TradeBase):
+    notes: Optional[str] = None
+    tags: Optional[str] = None
+
+class TradeUpdate(BaseModel):
+    notes: Optional[str] = None
+    tags: Optional[str] = None
+    screenshot: Optional[str] = None
+
+class TradeInDB(TradeBase):
+    id: int
+    user_id: int
+    pips: float = 0.0  # FIX: Added default value
+    win: bool = False   # FIX: Added default value
+    win_rate: float = 0.0  # FIX: Added default value
+    notes: Optional[str] = None
+    tags: Optional[str] = None
+    screenshot: Optional[str] = None
+    sl: Optional[float] = None  # Added missing field
+    tp: Optional[float] = None  # Added missing field
+    
+    # FIX: Use model_config instead of orm_mode
+    model_config = ConfigDict(from_attributes=True)
 
 # Stats schemas
-class StatsResponse(BaseModel):
+class TradeStats(BaseModel):
+    total_trades: int = 0
+    winning_trades: int = 0
+    losing_trades: int = 0
+    win_rate: float = 0.0
+    total_profit: float = 0.0
+    avg_profit: float = 0.0
+    max_profit: float = 0.0
+    max_loss: float = 0.0
+    profit_factor: float = 0.0
+
+class SymbolStats(BaseModel):
+    symbol: str
     total_trades: int
+    win_count: int = 0  
+    loss_count: int = 0
+    win_rate: float
     total_profit: float
-    win_rate: float
     avg_profit: float
-    best_symbol: Optional[str] = None
-    worst_symbol: Optional[str] = None
 
-# Calendar schemas
-class DayStats(BaseModel):
-    date: str
-    trades_count: int
-    profit: float
+class HourlyStats(BaseModel):
+    hour: int
+    total_trades: int
     win_rate: float
-
-class MonthCalendar(BaseModel):
-    year: int
-    month: int
-    days: list[DayStats]
+    total_profit: float

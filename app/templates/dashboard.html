@@ -5,29 +5,29 @@
 
 {% block content %}
 <div class="mb-8">
-    <h1 class="text-3xl font-bold mb-2">Dashboard</h1>
-    <p class="text-gray-600">Today is {{ today.strftime('%B %d, %Y') }}</p>
+    <h1 class="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Dashboard</h1>
+    <p class="text-gray-600 dark:text-gray-300">Today is {{ today.strftime('%B %d, %Y') }}</p>
 </div>
 
 <!-- Quick Stats -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white p-6 rounded-lg shadow">
-        <div class="text-gray-500 text-sm">Total Trades</div>
-        <div class="text-3xl font-bold">{{ stats.total_trades }}</div>
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700">
+        <div class="text-gray-500 dark:text-gray-400 text-sm">Total Trades</div>
+        <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ stats.total_trades }}</div>
     </div>
-    <div class="bg-white p-6 rounded-lg shadow">
-        <div class="text-gray-500 text-sm">Total Profit</div>
-        <div class="text-3xl font-bold {% if stats.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700">
+        <div class="text-gray-500 dark:text-gray-400 text-sm">Total Profit</div>
+        <div class="text-3xl font-bold {% if stats.total_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
             ${{ "%.2f"|format(stats.total_profit) }}
         </div>
     </div>
-    <div class="bg-white p-6 rounded-lg shadow">
-        <div class="text-gray-500 text-sm">Win Rate</div>
-        <div class="text-3xl font-bold">{{ "%.1f"|format(stats.win_rate) }}%</div>
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700">
+        <div class="text-gray-500 dark:text-gray-400 text-sm">Win Rate</div>
+        <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ "%.1f"|format(stats.win_rate) }}%</div>
     </div>
-    <div class="bg-white p-6 rounded-lg shadow">
-        <div class="text-gray-500 text-sm">Avg Profit/Trade</div>
-        <div class="text-3xl font-bold {% if stats.avg_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700">
+        <div class="text-gray-500 dark:text-gray-400 text-sm">Avg Profit/Trade</div>
+        <div class="text-3xl font-bold {% if stats.avg_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
             ${{ "%.2f"|format(stats.avg_profit) }}
         </div>
     </div>
@@ -35,16 +35,16 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
     <!-- Recent Trades -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="p-6 border-b">
-            <h2 class="text-xl font-bold">Recent Trades</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700">
+        <div class="p-6 border-b dark:border-gray-700">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">Recent Trades</h2>
         </div>
         <div class="p-6">
             {% if recent_trades %}
             <div class="overflow-x-auto">
                 <table class="min-w-full">
                     <thead>
-                        <tr class="text-left text-gray-500 text-sm">
+                        <tr class="text-left text-gray-500 dark:text-gray-400 text-sm">
                             <th class="pb-2">Ticket</th>
                             <th class="pb-2">Symbol</th>
                             <th class="pb-2">Type</th>
@@ -54,16 +54,16 @@
                     </thead>
                     <tbody>
                         {% for trade in recent_trades %}
-                        <tr class="border-t">
-                            <td class="py-3">#{{ trade.ticket }}</td>
-                            <td class="py-3">{{ trade.symbol }}</td>
+                        <tr class="border-t dark:border-gray-700">
+                            <td class="py-3 text-gray-900 dark:text-white">#{{ trade.ticket }}</td>
+                            <td class="py-3 text-gray-900 dark:text-white">{{ trade.symbol }}</td>
                             <td class="py-3">
-                                <span class="px-2 py-1 rounded text-xs {% if trade.type == 'BUY' %}bg-blue-100 text-blue-800{% else %}bg-purple-100 text-purple-800{% endif %}">
+                                <span class="px-2 py-1 rounded text-xs {% if trade.type == 'BUY' %}bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300{% else %}bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300{% endif %}">
                                     {{ trade.type }}
                                 </span>
                             </td>
-                            <td class="py-3 text-sm">{{ trade.time.strftime('%H:%M') }}</td>
-                            <td class="py-3 {% if trade.profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            <td class="py-3 text-sm text-gray-900 dark:text-white">{{ trade.time.strftime('%H:%M') }}</td>
+                            <td class="py-3 {% if trade.profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
                                 ${{ "%.2f"|format(trade.profit) }}
                             </td>
                         </tr>
@@ -73,8 +73,8 @@
             </div>
             {% else %}
             <div class="text-center py-8">
-                <p class="text-gray-500 mb-4">No trades yet.</p>
-                <a href="/sync" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                <p class="text-gray-500 dark:text-gray-400 mb-4">No trades yet.</p>
+                <a href="/sync" class="inline-block bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
                     Sync with MT5
                 </a>
             </div>
@@ -83,85 +83,115 @@
     </div>
 
     <!-- Top Symbols -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="p-6 border-b">
-            <h2 class="text-xl font-bold">Top Symbols</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-700/30 border border-gray-200 dark:border-gray-700">
+        <div class="p-6 border-b dark:border-gray-700">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">Top Symbols</h2>
         </div>
         <div class="p-6">
             {% if symbol_stats %}
-            <div class="space-y-4">
+            <div class="space-y-5">
                 {% for stat in symbol_stats %}
-                <div class="flex justify-between items-center">
-                    <div>
-                        <div class="font-medium">{{ stat.symbol }}</div>
-                        <div class="text-sm text-gray-500">{{ stat.total_trades }} trades</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-bold {% if stat.total_profit > 0 %}profit-positive{% else %}profit-negative{% endif %}">
-                            ${{ "%.2f"|format(stat.total_profit) }}
+                {% set win_rate = (stat.win_count / stat.total_trades * 100) if stat.total_trades > 0 else 0 %}
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-gray-900 dark:text-white truncate">{{ stat.symbol }}</div>
                         </div>
-                        <div class="text-sm text-gray-500">
-                            {{ "%.1f"|format((stat.win_count / stat.total_trades * 100) if stat.total_trades > 0 else 0) }}% win rate
+                        <div class="text-right ml-2">
+                            <div class="font-bold {% if stat.total_profit > 0 %}profit-positive text-green-600 dark:text-green-400{% else %}profit-negative text-red-600 dark:text-red-400{% endif %}">
+                                ${{ "%.2f"|format(stat.total_profit) }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ stat.total_trades }} trade{% if stat.total_trades != 1 %}s{% endif %}
+                        </div>
+                        <div class="text-sm text-gray-900 dark:text-white font-medium">
+                            {{ "%.1f"|format(win_rate) }}% win rate
+                        </div>
+                    </div>
+                    
+                    <!-- Win Rate Bar -->
+                    <div class="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        {% set win_width = win_rate|int %}
+                        {% set loss_width = 100 - win_width %}
+                        <div class="absolute left-0 top-0 h-full bg-green-500 dark:bg-green-400 rounded-l-full" 
+                             style="width: {{ win_width }}%"></div>
+                        <div class="absolute right-0 top-0 h-full bg-red-500 dark:bg-red-400 rounded-r-full" 
+                             style="width: {{ loss_width }}%"></div>
+                    </div>
+                    
+                    <!-- Win/Loss Labels -->
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-green-500 dark:bg-green-400 rounded-full mr-1"></div>
+                            <span>{{ win_width }}% Wins</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span>{{ loss_width }}% Losses</span>
+                            <div class="w-3 h-3 bg-red-500 dark:bg-red-400 rounded-full ml-1"></div>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-gray-500 text-center py-8">No symbol data available</p>
+            <p class="text-gray-500 dark:text-gray-400 text-center py-8">No symbol data available</p>
             {% endif %}
         </div>
     </div>
 </div>
 
 <!-- Sync Section -->
-<div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-    <h3 class="text-lg font-bold mb-4">📡 Sync with MT5</h3>
-    <p class="mb-4">Sync your trades from MetaTrader 5:</p>
+<div class="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+    <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">📡 Sync with MT5</h3>
+    <p class="mb-4 text-gray-700 dark:text-gray-300">Sync your trades from MetaTrader 5:</p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-white p-4 rounded border">
-            <h4 class="font-bold mb-2">Quick Sync</h4>
+        <div class="bg-white dark:bg-gray-800 p-4 rounded border border-gray-200 dark:border-gray-700">
+            <h4 class="font-bold mb-2 text-gray-900 dark:text-white">Quick Sync</h4>
             <div class="space-y-2">
-                <button onclick="syncTrades(30)" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                <button onclick="syncTrades(30)" class="w-full bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
                     Sync Last 30 Days
                 </button>
-                <button onclick="syncTrades(90)" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                <button onclick="syncTrades(90)" class="w-full bg-blue-500 dark:bg-blue-400 text-white px-4 py-2 rounded hover:bg-blue-600 dark:hover:bg-blue-500 transition-colors">
                     Sync Last 90 Days
                 </button>
-                <button onclick="syncTrades(365)" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                <button onclick="syncTrades(365)" class="w-full bg-green-600 dark:bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700 dark:hover:bg-green-600 transition-colors">
                     Sync All History
                 </button>
             </div>
         </div>
-        <div class="bg-white p-4 rounded border">
-            <h4 class="font-bold mb-2">Manual Sync</h4>
-            <p class="text-sm text-gray-600 mb-3">For more control, use the sync page:</p>
-            <a href="/sync" class="inline-block w-full text-center bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded border border-gray-200 dark:border-gray-700">
+            <h4 class="font-bold mb-2 text-gray-900 dark:text-white">Manual Sync</h4>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">For more control, use the sync page:</p>
+            <a href="/sync" class="inline-block w-full text-center bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-900 dark:hover:bg-gray-600 transition-colors">
                 Go to Sync Page
             </a>
         </div>
     </div>
-    <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+    <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-sm text-yellow-800 dark:text-yellow-300">
         <strong>Note:</strong> Ensure MT5 terminal is running before syncing.
     </div>
 </div>
 
 <!-- Quick Links -->
 <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-    <a href="/calendar" class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
-        <div class="text-blue-600 mb-2">📅</div>
-        <h3 class="font-bold mb-2">Calendar View</h3>
-        <p class="text-sm text-gray-600">View trades by day on calendar</p>
+    <a href="/calendar" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700/30 hover:shadow-md dark:hover:shadow-gray-600/30 transition-shadow border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600">
+        <div class="text-blue-600 dark:text-blue-400 mb-2">📅</div>
+        <h3 class="font-bold mb-2 text-gray-900 dark:text-white">Calendar View</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400">View trades by day on calendar</p>
     </a>
-    <a href="/stats" class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
-        <div class="text-green-600 mb-2">📊</div>
-        <h3 class="font-bold mb-2">Statistics</h3>
-        <p class="text-sm text-gray-600">Detailed trading statistics & analytics</p>
+    <a href="/stats" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700/30 hover:shadow-md dark:hover:shadow-gray-600/30 transition-shadow border border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600">
+        <div class="text-green-600 dark:text-green-400 mb-2">📊</div>
+        <h3 class="font-bold mb-2 text-gray-900 dark:text-white">Statistics</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400">Detailed trading statistics & analytics</p>
     </a>
-    <a href="/trades" class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
-        <div class="text-purple-600 mb-2">📋</div>
-        <h3 class="font-bold mb-2">All Trades</h3>
-        <p class="text-sm text-gray-600">Browse and filter all trades</p>
+    <a href="/trades" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-gray-700/30 hover:shadow-md dark:hover:shadow-gray-600/30 transition-shadow border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600">
+        <div class="text-purple-600 dark:text-purple-400 mb-2">📋</div>
+        <h3 class="font-bold mb-2 text-gray-900 dark:text-white">All Trades</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400">Browse and filter all trades</p>
     </a>
 </div>
 

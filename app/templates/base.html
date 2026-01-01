@@ -1,58 +1,321 @@
 <!-- app/templates/base.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="{% if user and user.theme == 'dark' %}dark{% endif %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}MT5 Trading Journal{% endblock %}</title>
+    <title>{% block title %}MT5 Trading Journal • Professional Trader's Dashboard{% endblock %}</title>
+    
+    <!-- Tailwind CSS with Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        'profit-positive': '#10b981',
-                        'profit-negative': '#ef4444',
+                        'trading-profit': '#10b981',
+                        'trading-loss': '#ef4444',
+                        'trading-primary': '#3b82f6',
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
+    
     <style>
-        .profit-positive { color: #10b981; }
-        .profit-negative { color: #ef4444; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Truncate long emails */
+        .email-truncate {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        @media (min-width: 1024px) {
+            .email-truncate {
+                max-width: 200px;
+            }
+        }
+        
+        /* Smooth transitions */
+        * {
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-gray-800 text-white p-4">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="text-xl font-bold">
-                <a href="/" class="hover:text-gray-300">MT5 Trading Journal</a>
+
+<body class="bg-gray-50 dark:bg-gray-900 font-inter">
+    <!-- Clean Navigation Bar -->
+    <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Left Side: Logo & Navigation -->
+                <div class="flex items-center">
+                    <!-- Logo -->
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-600 dark:bg-blue-700 w-10 h-10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-chart-line text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold text-gray-900 dark:text-white">MT5 Journal</h1>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">Trading Analytics</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Desktop Navigation -->
+                    <div class="hidden md:ml-6 md:flex md:space-x-1">
+                        <a href="/dashboard" class="px-3 py-2 rounded-md text-sm font-medium {% if request.url.path == '/dashboard' %}bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                            <i class="fas fa-tachometer-alt mr-1"></i>
+                            Dashboard
+                        </a>
+                        
+                        <a href="/trades" class="px-3 py-2 rounded-md text-sm font-medium {% if request.url.path == '/trades' %}bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                            <i class="fas fa-exchange-alt mr-1"></i>
+                            Trades
+                        </a>
+                        
+                        <a href="/stats" class="px-3 py-2 rounded-md text-sm font-medium {% if request.url.path == '/stats' %}bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                            <i class="fas fa-chart-bar mr-1"></i>
+                            Stats
+                        </a>
+                        
+                        <a href="/calendar" class="px-3 py-2 rounded-md text-sm font-medium {% if '/calendar' in request.url.path %}bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                            <i class="fas fa-calendar-alt mr-1"></i>
+                            Calendar
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right Side: Clean Controls -->
+                <div class="flex items-center space-x-3">
+                    <!-- Sync Button -->
+                    <a href="/sync" class="hidden lg:inline-flex items-center px-3 py-2 rounded-md text-sm font-medium bg-green-600 hover:bg-green-700 text-white">
+                        <i class="fas fa-sync-alt mr-1"></i>
+                        Sync MT5
+                    </a>
+                    
+                    <!-- Live Stats (Only show when stats exist) -->
+                    {% if stats %}
+                    <div class="hidden lg:flex items-center space-x-4">
+                        <div class="text-right">
+                            <div class="text-xs text-gray-500 dark:text-gray-400">P&L</div>
+                            <div class="text-sm font-bold {% if stats.total_profit >= 0 %}text-trading-profit{% else %}text-trading-loss{% endif %}">
+                                ${{ "%.2f"|format(stats.total_profit|default(0)) }}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Win Rate</div>
+                            <div class="text-sm font-bold text-trading-primary">
+                                {{ "%.1f"|format(stats.win_rate|default(0)) }}%
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Theme Toggle -->
+                    <button id="themeToggle" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <i id="themeIcon" class="fas {% if user and user.theme == 'dark' %}fa-sun text-yellow-500{% else %}fa-moon text-gray-600 dark:text-gray-400{% endif %}"></i>
+                    </button>
+                    
+                    <!-- User Dropdown -->
+                    {% if user %}
+                    <div class="relative">
+                        <button id="userMenuButton" class="flex items-center space-x-2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <div class="w-8 h-8 bg-blue-600 dark:bg-blue-700 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-medium">{{ user.email[0]|upper }}</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-500 dark:text-gray-400 text-xs"></i>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userDropdown" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-50 hidden">
+                            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white email-truncate">{{ user.email }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {% if user.mt5_login %}
+                                    <span class="text-green-600 dark:text-green-400">MT5: {{ user.mt5_login }}</span>
+                                    {% else %}
+                                    <span class="text-red-600 dark:text-red-400">No MT5</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            
+                            <div class="py-1">
+                                <a href="/dashboard" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-tachometer-alt w-4 mr-3"></i>
+                                    Dashboard
+                                </a>
+                                <a href="/sync" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-sync-alt w-4 mr-3"></i>
+                                    Sync MT5
+                                </a>
+                                <a href="/settings" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-cog w-4 mr-3"></i>
+                                    Settings
+                                </a>
+                                <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                                <a href="/logout" onclick="return confirmLogout()" class="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                    <i class="fas fa-sign-out-alt w-4 mr-3"></i>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <a href="/login" class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium">
+                        <i class="fas fa-sign-in-alt mr-1"></i>Login
+                    </a>
+                    {% endif %}
+                </div>
             </div>
-            <div class="flex space-x-4">
-                <a href="/dashboard" class="hover:text-gray-300">Dashboard</a>
-                <a href="/calendar" class="hover:text-gray-300">Calendar</a>
-                <a href="/stats" class="hover:text-gray-300">Statistics</a>
-                <a href="/trades" class="hover:text-gray-300">Trades</a>
-                <a href="/sync" class="hover:text-gray-300">Sync</a>
+            
+            <!-- Mobile Sync Button -->
+            <div class="md:hidden py-2">
+                <a href="/sync" class="w-full flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Sync MT5 Trades
+                </a>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="container mx-auto p-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Breadcrumb -->
+        <div class="mb-4">
+            <nav class="flex" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a href="/dashboard" class="inline-flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+                            <i class="fas fa-home mr-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    {% block breadcrumb %}{% endblock %}
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Flash Messages -->
+        {% if success %}
+        <div class="mb-4 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-400 p-4 rounded-r-lg">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-500 dark:text-green-400 mr-3"></i>
+                    <span class="text-green-700 dark:text-green-300">{{ success }}</span>
+                </div>
+                <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-green-500 hover:text-green-700 dark:hover:text-green-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="mb-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-400 p-4 rounded-r-lg">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-500 dark:text-red-400 mr-3"></i>
+                    <span class="text-red-700 dark:text-red-300">{{ error }}</span>
+                </div>
+                <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-700 dark:hover:text-red-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white p-4 mt-8">
-        <div class="container mx-auto text-center">
-            <p>MT5 Trading Journal • FastAPI • {% if today %}{{ today.year }}{% else %}2025{% endif %}</p>
-            <p class="text-sm text-gray-400 mt-2">Sync your MetaTrader 5 trades for analysis</p>
+    <!-- Simple Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-chart-line text-blue-600 dark:text-blue-400"></i>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">MT5 Trading Journal</span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                    &copy; {% if today %}{{ today.year }}{% else %}2025{% endif %} • Sync. Analyze. Improve.
+                </div>
+            </div>
         </div>
     </footer>
 
+    <!-- JavaScript -->
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        
+        themeToggle.addEventListener('click', () => {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark');
+            
+            if (isDark) {
+                html.classList.remove('dark');
+                themeIcon.className = 'fas fa-moon text-gray-600 dark:text-gray-400';
+                localStorage.setItem('theme', 'light');
+                fetch('/api/toggle-theme');
+            } else {
+                html.classList.add('dark');
+                themeIcon.className = 'fas fa-sun text-yellow-500';
+                localStorage.setItem('theme', 'dark');
+                fetch('/api/toggle-theme');
+            }
+        });
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+            themeIcon.className = 'fas fa-sun text-yellow-500';
+        }
+        
+        // User Dropdown
+        const userMenuButton = document.getElementById('userMenuButton');
+        const userDropdown = document.getElementById('userDropdown');
+        
+        if (userMenuButton) {
+            userMenuButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('hidden');
+            });
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (userDropdown && !userDropdown.contains(e.target) && !userMenuButton.contains(e.target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+        
+        // Logout Confirmation
+        function confirmLogout() {
+            return confirm('Are you sure you want to logout?');
+        }
+        
+        // Auto-hide flash messages
+        setTimeout(() => {
+            const flashMessages = document.querySelectorAll('[class*="bg-green-50"], [class*="bg-red-50"]');
+            flashMessages.forEach(msg => msg && msg.remove());
+        }, 5000);
+    </script>
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>

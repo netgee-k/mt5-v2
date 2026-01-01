@@ -1,43 +1,41 @@
-# test_mt5.py
+# test_update.py
 import sys
-import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append('.')
 
-from app.mt5_client import MT5Client
+from app.database import get_db
+from app.models import User
 
-def test_mt5():
-    print("Testing MT5 connection and trade sync...")
+# Get database session
+db_gen = get_db()
+try:
+    db = next(db_gen)
     
-    client = MT5Client()
+    # Find your user
+    user = db.query(User).filter(User.email == 'networksandcircuits@gmail.com').first()
     
-    # Test connection
-    if not client.connect():
-        print("Failed to connect to MT5")
-        return
-    
-    # Debug account info
-    client.debug_account_info()
-    
-    # Try to sync trades
-    print("\n=== Syncing Trades ===")
-    trades = client.sync_trades(days=30)
-    
-    if trades:
-        print(f"\nSuccessfully synced {len(trades)} trades!")
-        for i, trade in enumerate(trades[:3]):  # Show first 3
-            print(f"\nTrade {i+1}:")
-            print(f"  Ticket: {trade.ticket}")
-            print(f"  Symbol: {trade.symbol}")
-            print(f"  Type: {trade.type}")
-            print(f"  Profit: ${trade.profit:.2f}")
-            print(f"  Time: {trade.time}")
+    if user:
+        print(f"Before update:")
+        print(f"  Server: {user.mt5_server}")
+        print(f"  Login: {user.mt5_login}")
+        
+        # Update directly
+        user.mt5_server = "JustMarkets-Live"
+        user.mt5_login = 2050505598
+        user.mt5_password = "test123"  # Your actual password
+        
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+        print(f"\nAfter update:")
+        print(f"  Server: {user.mt5_server}")
+        print(f"  Login: {user.mt5_login}")
+        print(f"  Has password: {bool(user.mt5_password)}")
     else:
-        print("\nNo trades found. Possible reasons:")
-        print("1. No trading history in the specified date range")
-        print("2. Account has only open positions (not closed trades)")
-        print("3. Check MT5 'Account History' tab to verify trades exist")
-    
-    client.disconnect()
-
-if __name__ == "__main__":
-    test_mt5()
+        print("User not found!")
+        
+finally:
+    try:
+        db_gen.close()
+    except:
+        pass
