@@ -9,7 +9,6 @@ import calendar as cal
 import json
 import jwt
 import logging
-import os
 
 # Import your local modules
 from app import crud, schemas, auth, admin, ai_service
@@ -20,15 +19,11 @@ from app.config import settings
 from app.utils import send_email, generate_verification_email, generate_password_reset_email, save_screenshot
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
-
-# Ensure necessary directories exist
-if not os.path.exists("app/static/screenshots"):
-    os.makedirs("app/static/screenshots")
+settings.init_dirs()
 
 # Create FastAPI app
 app = FastAPI(title=settings.APP_NAME, version=settings.VERSION)
@@ -48,7 +43,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 # JWT Settings
 SECRET_KEY = settings.SECRET_KEY
-ALGORITHM = 'HS256'
+ALGORITHM = getattr(settings, 'ALGORITHM', 'HS256')
 
 # ==================== AUTHENTICATION ROUTES ====================
 
@@ -321,14 +316,8 @@ async def logout():
 # ==================== MIDDLEWARE FOR AUTH ====================
 
 async def get_current_user_from_cookie(request: Request, db: Session = Depends(get_db)):
-    """Get current user from cookie - IMPROVED VERSION"""
+    """Get current user from cookie - CLEAN VERSION"""
     access_token = request.cookies.get("access_token")
-    
-    if not access_token:
-        # Check for bearer token in Authorization header
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            access_token = auth_header.split("Bearer ")[1]
     
     if not access_token:
         return None
@@ -337,21 +326,7 @@ async def get_current_user_from_cookie(request: Request, db: Session = Depends(g
         payload = auth.verify_token(access_token, "access")
         
         if not payload:
-            # Try to refresh token
-            refresh_token = request.cookies.get("refresh_token")
-            if refresh_token:
-                refresh_payload = auth.verify_token(refresh_token, "refresh")
-                if refresh_payload:
-                    email = refresh_payload.get("sub")
-                    if email:
-                        # Generate new access token
-                        new_access_token = auth.create_access_token(data={"sub": email})
-                        # Update cookie in response (will be set by middleware)
-                        request.state.new_access_token = new_access_token
-                        
-                        user = db.query(User).filter(User.email == email).first()
-                        if user and user.is_active:
-                            return user
+            return None
         
         email = payload.get("sub")
         if not email:
@@ -365,27 +340,7 @@ async def get_current_user_from_cookie(request: Request, db: Session = Depends(g
         return user
         
     except Exception as e:
-        logger.error(f"Error getting current user: {e}")
         return None
-
-# ==================== MIDDLEWARE TO SET COOKIES ====================
-
-@app.middleware("http")
-async def refresh_access_token_middleware(request: Request, call_next):
-    response = await call_next(request)
-    
-    # Check if a new access token was generated during request processing
-    if hasattr(request.state, 'new_access_token'):
-        response.set_cookie(
-            key="access_token",
-            value=request.state.new_access_token,
-            httponly=True,
-            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            secure=False,
-            samesite="lax"
-        )
-    
-    return response
 
 # ==================== PROTECTED ROUTES ====================
 
@@ -624,7 +579,6 @@ async def update_profile(
             "success": "Profile updated successfully!"
         })
     except Exception as e:
-        logger.error(f"Error updating profile: {e}")
         return templates.TemplateResponse("settings.html", {
             "request": request,
             "user": current_user,
@@ -709,7 +663,6 @@ async def update_mt5(
         
     except Exception as e:
         db.rollback()
-        logger.error(f"Error updating MT5 credentials: {e}")
         return templates.TemplateResponse("settings.html", {
             "request": request,
             "user": current_user,
@@ -782,7 +735,6 @@ async def update_preferences(
             "success": "Preferences updated successfully!"
         })
     except Exception as e:
-        logger.error(f"Error updating preferences: {e}")
         return templates.TemplateResponse("settings.html", {
             "request": request,
             "user": current_user,
@@ -830,7 +782,6 @@ async def update_security(
             "success": "Password changed successfully! Please login again."
         })
     except Exception as e:
-        logger.error(f"Error changing password: {e}")
         return templates.TemplateResponse("settings.html", {
             "request": request,
             "user": current_user,
@@ -1264,13 +1215,13 @@ async def checklist_page(
 @app.post("/checklist/create")
 async def create_checklist(
     request: Request,
-    name: str = Form(None),
-    title: str = Form(None),
-    items_json: str = Form(None),
+    name: str = Form(None),  # Make this optional
+    title: str = Form(None),  # Add title field
+    items_json: str = Form(None),  # Make this optional
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_from_cookie)
 ):
-    """Create a new trade checklist"""
+    """Create a new trade checklist - FIXED VERSION"""
     if not current_user:
         return RedirectResponse(url="/login")
     
@@ -1327,7 +1278,7 @@ async def create_checklist(
                 {'id': '2', 'text': 'Sample item 2', 'checked': False, 'required': False}
             ]
         
-        # Create checklist using the model directly
+        # Create checklist using the model directly to avoid schema validation issues
         items_json_str = json.dumps(items)
         
         db_checklist = TradeChecklist(
@@ -1349,7 +1300,8 @@ async def create_checklist(
             "success": f"Checklist '{checklist_name}' created successfully!"
         })
     except Exception as e:
-        logger.error(f"Error creating checklist: {e}")
+        import traceback
+        print(f"Error creating checklist: {e}")
         
         return templates.TemplateResponse("checklist.html", {
             "request": request,
@@ -1372,6 +1324,7 @@ async def use_checklist(
     
     try:
         # Get the default checklist
+        from app.models import TradeChecklist
         checklist = db.query(TradeChecklist).filter(
             TradeChecklist.id == checklist_id,
             TradeChecklist.is_default == True
@@ -1391,7 +1344,6 @@ async def use_checklist(
         
         return RedirectResponse(url="/checklist")
     except Exception as e:
-        logger.error(f"Error using checklist: {e}")
         return RedirectResponse(url="/checklist")
 
 @app.get("/news", response_class=HTMLResponse)
@@ -1400,19 +1352,19 @@ async def news_page(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_from_cookie)
 ):
-    """News page"""
     if not current_user:
         return RedirectResponse(url="/login")
 
     news_alerts = crud.get_news_alerts(db, current_user.id, limit=20)
 
-    # Get symbol stats
+    # Get symbol stats - these are SymbolStats objects, not dictionaries
     top_symbols_raw = crud.get_symbol_stats(db, current_user.id)
     
     # Extract just the symbol strings from SymbolStats objects
     top_symbols = []
     if top_symbols_raw:
-        for stat in top_symbols_raw[:3]:
+        for stat in top_symbols_raw[:3]:  # Get top 3 symbols
+            # SymbolStats objects have .symbol attribute, not ['symbol']
             if hasattr(stat, 'symbol'):
                 top_symbols.append(stat.symbol)
 
@@ -1437,13 +1389,13 @@ async def fetch_news(
         return RedirectResponse(url="/login")
     
     try:
-        # Get user's top symbols
+        # Get user's top symbols - these are SymbolStats objects
         top_symbols = crud.get_symbol_stats(db, current_user.id)
         
         # Extract symbol strings from SymbolStats objects
         symbols = []
         if top_symbols:
-            for stat in top_symbols[:3]:
+            for stat in top_symbols[:3]:  # Get top 3 symbols
                 if hasattr(stat, 'symbol') and stat.symbol:
                     symbols.append(stat.symbol)
         
@@ -1458,7 +1410,6 @@ async def fetch_news(
             "success": "News updated successfully!"
         })
     except Exception as e:
-        logger.error(f"Error fetching news: {e}")
         return templates.TemplateResponse("news.html", {
             "request": request,
             "user": current_user,
@@ -1486,7 +1437,6 @@ async def mark_news_read(
         else:
             return JSONResponse({"error": "News not found"}, status_code=404)
     except Exception as e:
-        logger.error(f"Error marking news as read: {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
 
 @app.get("/risk-reward", response_class=HTMLResponse)
@@ -1590,7 +1540,6 @@ async def api_generate_weekly_report(
                 "error": "No trades found for the past week"
             })
     except Exception as e:
-        logger.error(f"Error generating weekly report: {e}")
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 @app.get("/api/badges")
@@ -1640,6 +1589,27 @@ async def api_get_checklists(
             for checklist in checklists
         ]
     })
+
+@app.post("/checklist/create-debug")
+async def create_checklist_debug(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Debug endpoint to see what's being sent"""
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    try:
+        # Get form data
+        form_data = await request.form()
+        
+        return JSONResponse({
+            "form_data": dict(form_data),
+            "success": True
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 @app.get("/api/news")
 async def api_get_news(
@@ -1781,12 +1751,12 @@ async def startup_event():
             
             if env_password and len(env_password.encode('utf-8')) <= 72:
                 admin_password = env_password
-                logger.info(f"Using provided admin password from .env")
+                print(f"Using provided admin password from .env")
             else:
                 if env_password:
-                    logger.warning(f"Warning: ADMIN_PASSWORD too long ({len(env_password.encode('utf-8'))} bytes). Using default password.")
+                    print(f"Warning: ADMIN_PASSWORD too long ({len(env_password.encode('utf-8'))} bytes). Using default password.")
                 else:
-                    logger.warning(f"Warning: No ADMIN_PASSWORD set in .env. Using default password.")
+                    print(f"Warning: No ADMIN_PASSWORD set in .env. Using default password.")
             
             # Ensure password is safe for bcrypt
             safe_password = admin_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
@@ -1812,18 +1782,18 @@ async def startup_event():
             db.add(user_settings)
             db.commit()
             
-            logger.info(f"✓ Admin user created successfully")
-            logger.info(f"  Email: {settings.ADMIN_EMAIL}")
-            logger.info(f"  Password: {admin_password[:8]}... (first 8 chars)")
+            print(f"✓ Admin user created successfully")
+            print(f"  Email: {settings.ADMIN_EMAIL}")
+            print(f"  Password: {admin_password[:8]}... (first 8 chars)")
         else:
-            logger.info(f"✓ Admin user already exists: {settings.ADMIN_EMAIL}")
+            print(f"✓ Admin user already exists: {settings.ADMIN_EMAIL}")
         
         # Create default checklists
         crud.create_default_checklists(db)
-        logger.info("✓ Default checklists created")
+        print("✓ Default checklists created")
     
     except Exception as e:
-        logger.error(f"✗ Error during startup: {str(e)}")
+        print(f"✗ Error during startup: {str(e)}")
         import traceback
         traceback.print_exc()
     finally:
@@ -1831,6 +1801,8 @@ async def startup_event():
             db_gen.close()
         except:
             pass
+
+
 
 # Debug route to see registered routes
 @app.get("/debug/routes")
@@ -1845,8 +1817,6 @@ async def debug_routes():
             })
     return {"routes": sorted(routes, key=lambda x: x["path"])}
 
-# ==================== MAIN ENTRY POINT ====================
-
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

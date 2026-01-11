@@ -4,6 +4,55 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
 
+# In UserCreate schema, add is_oauth_user
+class UserCreate(BaseModel):
+    email: EmailStr
+    username: str
+    full_name: Optional[str] = None
+    password: str
+    is_oauth_user: Optional[bool] = False  # Add this
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        return v
+
+# In UserUpdate schema, add OAuth fields
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    username: Optional[str] = None
+    full_name: Optional[str] = None
+    current_password: Optional[str] = None
+    password: Optional[str] = None
+    mt5_server: Optional[str] = None
+    mt5_login: Optional[int] = None
+    mt5_password: Optional[str] = None
+    theme: Optional[str] = None
+    timezone: Optional[str] = None
+    is_oauth_user: Optional[bool] = None  # Add this
+    oauth_provider: Optional[str] = None  # Add this
+    oauth_id: Optional[str] = None  # Add this
+
+# In User model, add OAuth fields
+class User(BaseModel):
+    email: EmailStr
+    username: str
+    full_name: Optional[str] = None
+    id: int
+    is_active: bool
+    is_verified: bool
+    is_admin: bool
+    is_oauth_user: Optional[bool] = False  # Add this
+    oauth_provider: Optional[str] = None  # Add this
+    oauth_id: Optional[str] = None  # Add this
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        orm_mode = True
+
+
 # User Schemas
 class UserBase(BaseModel):
     email: EmailStr

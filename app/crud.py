@@ -298,6 +298,21 @@ def get_symbol_stats(db: Session, user_id: int):
 
 
 
+# Add to app/crud.py
+def generate_unique_username(db: Session, base_username: str) -> str:
+    """
+    Generate a unique username. If the base username exists,
+    append numbers until we find an available one.
+    """
+    username = base_username
+    counter = 1
+    
+    # Check if username already exists
+    while get_user_by_username(db, username):
+        username = f"{base_username}{counter}"
+        counter += 1
+    
+    return username
 
 
 

@@ -1,3 +1,4 @@
+# app/models.py - CORRECTED VERSION
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, JSON, Enum
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -24,8 +25,6 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # MT5 credentials (encrypted in production)
     mt5_server = Column(String)
@@ -35,6 +34,14 @@ class User(Base):
     # User preferences
     theme = Column(String, default="light")  # light/dark
     timezone = Column(String, default="UTC")
+    
+    # OAUTH FIELDS - IMPORTANT: Add these 3 lines
+    is_oauth_user = Column(Boolean, default=False)
+    oauth_provider = Column(String, nullable=True)
+    oauth_id = Column(String, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     trades = relationship("Trade", back_populates="user")
