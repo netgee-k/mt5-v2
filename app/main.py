@@ -7,14 +7,14 @@ from datetime import datetime, timedelta
 from typing import Optional
 import calendar as cal
 import json
-import jwt  # ADDED IMPORT
-import logging  # ADDED IMPORT
+import jwt
+import logging
 
 # Import your local modules
-from . import crud, schemas, auth, admin
+from . import crud, schemas, auth, admin, ai_service
 from .database import get_db, engine, Base
 from .mt5_client import MT5Client
-from .models import Trade, User, UserSettings
+from .models import Trade, User, UserSettings, UserBadge, WeeklyReport, TradeChecklist, NewsAlert
 from .config import settings
 from .utils import send_email, generate_verification_email, generate_password_reset_email, save_screenshot
 
@@ -36,11 +36,9 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 # Templates
 templates = Jinja2Templates(directory="app/templates")
 
-# JWT Settings - ADDED
+# JWT Settings
 SECRET_KEY = settings.SECRET_KEY
-#ALGORITHM = settings.ALGORITHM
 ALGORITHM = getattr(settings, 'ALGORITHM', 'HS256')
-
 
 # ==================== AUTHENTICATION ROUTES ====================
 
@@ -89,7 +87,7 @@ async def login(
         value=access_token,
         httponly=True,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        secure=False,  # Set to True in production with HTTPS
+        secure=False,
         samesite="lax"
     )
     response.set_cookie(
@@ -310,54 +308,34 @@ async def logout():
     response.delete_cookie("refresh_token")
     return response
 
-
 # ==================== MIDDLEWARE FOR AUTH ====================
 
 async def get_current_user_from_cookie(request: Request, db: Session = Depends(get_db)):
-    """Get current user from cookie - FIXED VERSION"""
+    """Get current user from cookie - CLEAN VERSION"""
     access_token = request.cookies.get("access_token")
     
     if not access_token:
-        print("DEBUG: No access token in cookie")
         return None
     
-    print(f"DEBUG: Found access token: {access_token[:30]}...")
-    
     try:
-        # Verify the token directly without await
         payload = auth.verify_token(access_token, "access")
         
         if not payload:
-            print("DEBUG: Token verification failed")
             return None
         
         email = payload.get("sub")
         if not email:
-            print("DEBUG: No email in token payload")
             return None
         
-        print(f"DEBUG: Token valid for email: {email}")
-        
-        # Get user from database
         user = db.query(User).filter(User.email == email).first()
         
-        if not user:
-            print(f"DEBUG: User not found in database: {email}")
+        if not user or not user.is_active:
             return None
         
-        if not user.is_active:
-            print(f"DEBUG: User not active: {email}")
-            return None
-        
-        print(f"DEBUG: Authentication successful for: {email}")
         return user
         
     except Exception as e:
-        print(f"DEBUG: Error in get_current_user_from_cookie: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return None
-
 
 # ==================== PROTECTED ROUTES ====================
 
@@ -602,116 +580,89 @@ async def update_profile(
             "error": f"Error updating profile: {str(e)}"
         })
 
-
-
 @app.post("/settings/mt5")
 async def update_mt5(
     request: Request,
     mt5_server: str = Form(None),
-    mt5_login: str = Form(None),  # Changed to str to handle form input
+    mt5_login: str = Form(None),
     mt5_password: str = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_from_cookie)
 ):
-    """Update MT5 credentials - DEBUG VERSION"""
+    """Update MT5 credentials"""
     if not current_user:
         return RedirectResponse(url="/login")
     
-    print(f"\n{'='*60}")
-    print(f"DEBUG: MT5 SETTINGS FORM SUBMITTED")
-    print(f"User: {current_user.email} (ID: {current_user.id})")
-    print(f"Form data received:")
-    print(f"  mt5_server: '{mt5_server}' (type: {type(mt5_server)})")
-    print(f"  mt5_login: '{mt5_login}' (type: {type(mt5_login)})")
-    print(f"  mt5_password: {'PROVIDED' if mt5_password else 'NOT PROVIDED'}")
-    print(f"Current DB values before update:")
-    print(f"  mt5_server: '{current_user.mt5_server}'")
-    print(f"  mt5_login: '{current_user.mt5_login}'")
-    print(f"  Has password: {bool(current_user.mt5_password)}")
-    
     try:
-        # Update fields if provided
+        # Track updates
         updated = False
         
-        if mt5_server is not None and mt5_server.strip():
-            print(f"Setting mt5_server to: '{mt5_server.strip()}'")
-            current_user.mt5_server = mt5_server.strip()
-            updated = True
+        # Handle MT5 Server
+        if mt5_server is not None:
+            mt5_server = mt5_server.strip()
+            if mt5_server == "":
+                if current_user.mt5_server is not None:
+                    current_user.mt5_server = None
+                    updated = True
+            else:
+                if current_user.mt5_server != mt5_server:
+                    current_user.mt5_server = mt5_server
+                    updated = True
         
-        if mt5_login is not None and mt5_login.strip():
-            try:
-                login_int = int(mt5_login.strip())
-                print(f"Setting mt5_login to: {login_int}")
-                current_user.mt5_login = login_int
-                updated = True
-            except ValueError:
-                print(f"ERROR: mt5_login '{mt5_login}' is not a valid integer")
+        # Handle MT5 Login
+        if mt5_login is not None:
+            mt5_login = mt5_login.strip()
+            if mt5_login == "":
+                if current_user.mt5_login is not None:
+                    current_user.mt5_login = None
+                    updated = True
+            else:
+                try:
+                    login_value = int(mt5_login)
+                    if current_user.mt5_login != login_value:
+                        current_user.mt5_login = login_value
+                        updated = True
+                except ValueError:
+                    return templates.TemplateResponse("settings.html", {
+                        "request": request,
+                        "user": current_user,
+                        "error": "MT5 login must be a valid number (digits only)"
+                    })
         
-        if mt5_password is not None and mt5_password.strip():
-            print(f"Setting mt5_password (length: {len(mt5_password)})")
-            current_user.mt5_password = mt5_password.strip()
-            updated = True
+        # Handle MT5 Password
+        if mt5_password is not None:
+            mt5_password = mt5_password.strip()
+            if mt5_password == "":
+                if current_user.mt5_password is not None:
+                    current_user.mt5_password = None
+                    updated = True
+            else:
+                if current_user.mt5_password != mt5_password:
+                    current_user.mt5_password = mt5_password
+                    updated = True
         
+        # Save to database if there were updates
         if updated:
-            print("Saving to database...")
             db.add(current_user)
             db.commit()
             db.refresh(current_user)
-            print("Database committed successfully!")
+            success_msg = "MT5 credentials updated successfully!"
         else:
-            print("No updates to save")
-        
-        print(f"Current DB values after update:")
-        print(f"  mt5_server: '{current_user.mt5_server}'")
-        print(f"  mt5_login: '{current_user.mt5_login}'")
-        print(f"  Has password: {bool(current_user.mt5_password)}")
-        print(f"{'='*60}\n")
+            success_msg = "No changes detected"
         
         return templates.TemplateResponse("settings.html", {
             "request": request,
             "user": current_user,
-            "success": "MT5 credentials updated successfully!"
+            "success": success_msg
         })
         
     except Exception as e:
-        print(f"ERROR during update: {str(e)}")
-        import traceback
-        traceback.print_exc()
         db.rollback()
-        
         return templates.TemplateResponse("settings.html", {
             "request": request,
             "user": current_user,
             "error": f"Error updating MT5 credentials: {str(e)}"
         })
-
-
-
-@app.get("/api/check-mt5-credentials")
-async def check_mt5_credentials(
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_from_cookie)
-):
-    """Check if MT5 credentials are set for the current user"""
-    if not current_user:
-        return JSONResponse({"error": "Not authenticated"}, status_code=401)
-    
-    try:
-        # Check MT5 credentials
-        credentials_set = bool(current_user.mt5_server and current_user.mt5_login and current_user.mt5_password)
-        
-        return JSONResponse({
-            "credentials_set": credentials_set,
-            "has_server": bool(current_user.mt5_server),
-            "has_login": bool(current_user.mt5_login),
-            "has_password": bool(current_user.mt5_password)
-        })
-        
-    except Exception as e:
-        logger.error(f"Error checking MT5 credentials: {e}")
-        return JSONResponse({"error": str(e)}, status_code=500)
-
 
 @app.post("/settings/preferences")
 async def update_preferences(
@@ -853,15 +804,14 @@ async def sync_post(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_from_cookie)
 ):
-    """Handle manual sync from form"""
+    """Handle manual sync from form - FIXED to return JSON for AJAX"""
     if not current_user:
-        return RedirectResponse(url="/login")
+        return JSONResponse({"success": False, "error": "Not authenticated"})
     
     # Check if user has MT5 credentials
     if not current_user.mt5_server or not current_user.mt5_login or not current_user.mt5_password:
-        return templates.TemplateResponse("sync.html", {
-            "request": request,
-            "user": current_user,
+        return JSONResponse({
+            "success": False,
             "error": "Please set your MT5 credentials in Settings first"
         })
     
@@ -880,15 +830,20 @@ async def sync_post(
         
         mt5.disconnect()
         
-        return templates.TemplateResponse("sync.html", {
-            "request": request,
-            "user": current_user,
-            "message": f"Successfully synced {created} trades from MT5"
+        # Get updated count
+        total_in_db = db.query(Trade).filter(Trade.user_id == current_user.id).count()
+        
+        return JSONResponse({
+            "success": True,
+            "message": f"Successfully synced {created} trades from MT5",
+            "synced_trades": created,
+            "total_in_db": total_in_db
         })
+        
     except Exception as e:
-        return templates.TemplateResponse("sync.html", {
-            "request": request,
-            "user": current_user,
+        logger.error(f"Sync failed: {e}")
+        return JSONResponse({
+            "success": False,
             "error": f"Sync failed: {str(e)}"
         })
 
@@ -941,7 +896,7 @@ async def read_trades_api(
                 "type": trade.type,
                 "volume": trade.volume,
                 "entry_price": trade.entry_price,
-                "exit_price": getattr(trade, 'exit_price', trade.entry_price),  # Fallback to entry_price
+                "exit_price": getattr(trade, 'exit_price', trade.entry_price),
                 "profit": trade.profit,
                 "commission": getattr(trade, 'commission', 0.0),
                 "swap": getattr(trade, 'swap', 0.0),
@@ -997,13 +952,13 @@ async def get_stats(
             "total_trades": total_trades,
             "total_profit": total_profit,
             "win_rate": win_rate,
-            "avg_profit": avg_profit
+            "avg_profit": avg_profit,
+            "last_sync_time": datetime.now().isoformat() if total_trades > 0 else None
         })
         
     except Exception as e:
         logger.error(f"Error getting stats: {e}")
         return JSONResponse({"error": str(e)}, status_code=500)
-
 
 @app.post("/api/sync-mt5")
 async def sync_mt5_api(
@@ -1012,7 +967,7 @@ async def sync_mt5_api(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_from_cookie)
 ):
-    """Sync trades from MT5 - API endpoint"""
+    """Sync trades from MT5 - API endpoint (identical to /sync but returns JSON)"""
     if not current_user:
         return JSONResponse({"error": "Not authenticated"}, status_code=401)
     
@@ -1048,6 +1003,28 @@ async def sync_mt5_api(
         logger.error(f"Error syncing MT5: {e}")
         return JSONResponse({"error": str(e), "success": False}, status_code=400)
 
+@app.get("/api/check-mt5-credentials")
+async def check_mt5_credentials(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Check if MT5 credentials are set"""
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    credentials_set = bool(
+        current_user.mt5_server and 
+        current_user.mt5_login and 
+        current_user.mt5_password
+    )
+    
+    return JSONResponse({
+        "credentials_set": credentials_set,
+        "has_server": bool(current_user.mt5_server),
+        "has_login": bool(current_user.mt5_login),
+        "has_password": bool(current_user.mt5_password)
+    })
 
 @app.post("/api/screenshot/{trade_id}")
 async def upload_screenshot(
@@ -1117,6 +1094,651 @@ async def toggle_theme(
     
     return response
 
+# ==================== AI-POWERED FEATURES ====================
+
+@app.get("/weekly-report", response_class=HTMLResponse)
+async def weekly_report_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Weekly report page"""
+    if not current_user:
+        return RedirectResponse(url="/login")
+    
+    # Get existing weekly reports
+    weekly_reports = crud.get_weekly_reports(db, current_user.id, limit=5)
+    
+    # Check if user has badges
+    badges = crud.get_user_badges(db, current_user.id)
+    
+    return templates.TemplateResponse("weekly-report.html", {
+        "request": request,
+        "user": current_user,
+        "weekly_reports": weekly_reports,
+        "badges": badges
+    })
+
+@app.post("/generate-weekly-report")
+async def generate_weekly_report_endpoint(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Generate weekly report"""
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    try:
+        report = crud.generate_weekly_report(db, current_user.id)
+        
+        if report:
+            return templates.TemplateResponse("weekly-report.html", {
+                "request": request,
+                "user": current_user,
+                "weekly_reports": crud.get_weekly_reports(db, current_user.id, limit=5),
+                "success": "Weekly report generated successfully!"
+            })
+        else:
+            return templates.TemplateResponse("weekly-report.html", {
+                "request": request,
+                "user": current_user,
+                "weekly_reports": crud.get_weekly_reports(db, current_user.id, limit=5),
+                "error": "No trades found for the past week."
+            })
+    except Exception as e:
+        logger.error(f"Error generating weekly report: {e}")
+        return templates.TemplateResponse("weekly-report.html", {
+            "request": request,
+            "user": current_user,
+            "weekly_reports": crud.get_weekly_reports(db, current_user.id, limit=5),
+            "error": f"Error generating report: {str(e)}"
+        })
+
+@app.get("/badges", response_class=HTMLResponse)
+async def badges_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Badges page"""
+    if not current_user:
+        return RedirectResponse(url="/login")
+    
+    badges = crud.get_user_badges(db, current_user.id)
+    
+    # Define badge descriptions
+    badge_descriptions = {
+        "best_trader": "Awarded for achieving >70% win rate with consistent profits",
+        "consistency": "Awarded for maintaining profitable trades over multiple sessions",
+        "risk_manager": "Awarded for excellent risk-reward ratio management",
+        "high_profit": "Awarded for achieving exceptional profit levels",
+        "disciplined": "Awarded for following trading rules consistently",
+        "comeback_king": "Awarded for recovering from drawdown successfully"
+    }
+    
+    return templates.TemplateResponse("badges.html", {
+        "request": request,
+        "user": current_user,
+        "badges": badges,
+        "badge_descriptions": badge_descriptions
+    })
+
+@app.get("/checklist", response_class=HTMLResponse)
+async def checklist_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Trade checklist page"""
+    if not current_user:
+        return RedirectResponse(url="/login")
+    
+    # Get user's checklists
+    user_checklists = crud.get_trade_checklists(db, current_user.id)
+    
+    # Get default checklists
+    default_checklists = crud.get_default_checklists(db)
+    
+    return templates.TemplateResponse("checklist.html", {
+        "request": request,
+        "user": current_user,
+        "user_checklists": user_checklists,
+        "default_checklists": default_checklists
+    })
+
+
+
+
+@app.post("/checklist/create")
+async def create_checklist(
+    request: Request,
+    name: str = Form(None),  # Make this optional
+    title: str = Form(None),  # Add title field
+    items_json: str = Form(None),  # Make this optional
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Create a new trade checklist - FIXED VERSION"""
+    if not current_user:
+        return RedirectResponse(url="/login")
+    
+    try:
+        # Get the checklist name
+        checklist_name = name or title or f"Checklist {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        
+        # Get items
+        items = []
+        if items_json:
+            try:
+                parsed_items = json.loads(items_json)
+                # Convert item IDs to strings
+                for item in parsed_items:
+                    if isinstance(item, dict):
+                        item['id'] = str(item.get('id', len(items) + 1))
+                        items.append(item)
+            except json.JSONDecodeError:
+                # If JSON parsing fails, treat as plain text
+                pass
+        
+        # If no items from JSON, try to get form data
+        if not items:
+            form_data = await request.form()
+            print(f"Form data received: {dict(form_data)}")
+            
+            # Look for individual item fields
+            for key, value in form_data.items():
+                if key.startswith('item_') and value.strip():
+                    items.append({
+                        'id': str(len(items) + 1),
+                        'text': value.strip(),
+                        'checked': False,
+                        'required': False
+                    })
+        
+        # If still no items, check for items as newline-separated text
+        if not items:
+            form_data = await request.form()
+            items_text = form_data.get('items', '')
+            if items_text:
+                item_list = [item.strip() for item in items_text.split('\n') if item.strip()]
+                for i, text in enumerate(item_list):
+                    items.append({
+                        'id': str(i + 1),
+                        'text': text,
+                        'checked': False,
+                        'required': False
+                    })
+        
+        # If still no items, create default items
+        if not items:
+            items = [
+                {'id': '1', 'text': 'Sample item 1', 'checked': False, 'required': True},
+                {'id': '2', 'text': 'Sample item 2', 'checked': False, 'required': False}
+            ]
+        
+        print(f"Creating checklist '{checklist_name}' with items: {items}")
+        
+        # Create checklist using the model directly to avoid schema validation issues
+        items_json_str = json.dumps(items)
+        
+        db_checklist = TradeChecklist(
+            user_id=current_user.id,
+            name=checklist_name,
+            items=items_json_str,
+            created_at=datetime.utcnow()
+        )
+        
+        db.add(db_checklist)
+        db.commit()
+        db.refresh(db_checklist)
+        
+        return templates.TemplateResponse("checklist.html", {
+            "request": request,
+            "user": current_user,
+            "user_checklists": crud.get_trade_checklists(db, current_user.id),
+            "default_checklists": crud.get_default_checklists(db),
+            "success": f"Checklist '{checklist_name}' created successfully!"
+        })
+    except Exception as e:
+        import traceback
+        print(f"Error creating checklist: {e}")
+        print(traceback.format_exc())
+        
+        return templates.TemplateResponse("checklist.html", {
+            "request": request,
+            "user": current_user,
+            "user_checklists": crud.get_trade_checklists(db, current_user.id),
+            "default_checklists": crud.get_default_checklists(db),
+            "error": f"Error creating checklist: {str(e)}"
+        })
+@app.get("/checklist/{checklist_id}/use")
+async def use_checklist(
+    checklist_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Use a default checklist by creating a user copy"""
+    if not current_user:
+        return RedirectResponse(url="/login")
+    
+    try:
+        # Get the default checklist
+        from .models import TradeChecklist
+        checklist = db.query(TradeChecklist).filter(
+            TradeChecklist.id == checklist_id,
+            TradeChecklist.is_default == True
+        ).first()
+        
+        if not checklist:
+            return RedirectResponse(url="/checklist")
+        
+        # Create a user copy
+        checklist_create = schemas.TradeChecklistCreate(
+            user_id=current_user.id,
+            name=checklist.name + " (Copy)",
+            items=checklist.items
+        )
+        
+        crud.create_trade_checklist(db, checklist_create)
+        
+        return RedirectResponse(url="/checklist")
+    except Exception as e:
+        return RedirectResponse(url="/checklist")
+
+
+@app.get("/news", response_class=HTMLResponse)
+async def news_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    if not current_user:
+        return RedirectResponse(url="/login")
+
+    news_alerts = crud.get_news_alerts(db, current_user.id, limit=20)
+
+    # Get symbol stats - these are SymbolStats objects, not dictionaries
+    top_symbols_raw = crud.get_symbol_stats(db, current_user.id)
+    
+    # Extract just the symbol strings from SymbolStats objects
+    top_symbols = []
+    if top_symbols_raw:
+        for stat in top_symbols_raw[:3]:  # Get top 3 symbols
+            # SymbolStats objects have .symbol attribute, not ['symbol']
+            if hasattr(stat, 'symbol'):
+                top_symbols.append(stat.symbol)
+
+    return templates.TemplateResponse(
+        "news.html",
+        {
+            "request": request,
+            "user": current_user,
+            "news_alerts": news_alerts,
+            "top_symbols": top_symbols,  # This is now a List[str]
+        }
+    )
+
+
+
+@app.post("/news/fetch")
+async def fetch_news(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Fetch latest news"""
+    if not current_user:
+        return RedirectResponse(url="/login")
+    
+    try:
+        # Get user's top symbols - these are SymbolStats objects
+        top_symbols = crud.get_symbol_stats(db, current_user.id)
+        
+        # Extract symbol strings from SymbolStats objects
+        symbols = []
+        if top_symbols:
+            for stat in top_symbols[:3]:  # Get top 3 symbols
+                if hasattr(stat, 'symbol') and stat.symbol:
+                    symbols.append(stat.symbol)
+        
+        # Fetch and store news
+        crud.fetch_and_store_news(db, current_user.id, symbols if symbols else None)
+        
+        return templates.TemplateResponse("news.html", {
+            "request": request,
+            "user": current_user,
+            "news_alerts": crud.get_news_alerts(db, current_user.id, limit=20),
+            "top_symbols": [stat.symbol for stat in top_symbols[:3]] if top_symbols else [],
+            "success": "News updated successfully!"
+        })
+    except Exception as e:
+        return templates.TemplateResponse("news.html", {
+            "request": request,
+            "user": current_user,
+            "news_alerts": crud.get_news_alerts(db, current_user.id, limit=20),
+            "top_symbols": [],
+            "error": f"Error fetching news: {str(e)}"
+        })
+
+
+@app.post("/news/{news_id}/mark-read")
+async def mark_news_read(
+    news_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Mark news as read"""
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    try:
+        success = crud.mark_news_as_read(db, news_id, current_user.id)
+        
+        if success:
+            return JSONResponse({"success": True})
+        else:
+            return JSONResponse({"error": "News not found"}, status_code=404)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@app.get("/risk-reward", response_class=HTMLResponse)
+async def risk_reward_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Risk-Reward analysis page"""
+    if not current_user:
+        return RedirectResponse(url="/login")
+    
+    # Get trades with SL/TP data
+    trades = db.query(Trade).filter(
+        Trade.user_id == current_user.id,
+        Trade.sl.isnot(None),
+        Trade.tp.isnot(None)
+    ).order_by(Trade.time.desc()).limit(50).all()
+    
+    # Calculate risk-reward metrics
+    risk_reward_data = []
+    total_rrr = 0
+    winning_rrr = 0
+    losing_rrr = 0
+    
+    for trade in trades:
+        if trade.sl and trade.tp:
+            risk = abs(trade.entry_price - trade.sl)
+            reward = abs(trade.tp - trade.entry_price)
+            
+            if risk > 0:
+                rrr = reward / risk
+                total_rrr += rrr
+                
+                if trade.profit > 0:
+                    winning_rrr += rrr
+                else:
+                    losing_rrr += rrr
+                
+                risk_reward_data.append({
+                    'ticket': trade.ticket,
+                    'symbol': trade.symbol,
+                    'type': trade.type,
+                    'profit': trade.profit,
+                    'risk': risk,
+                    'reward': reward,
+                    'rrr': rrr,
+                    'win': trade.profit > 0,
+                    'time': trade.time
+                })
+    
+    avg_rrr = total_rrr / len(risk_reward_data) if risk_reward_data else 0
+    avg_winning_rrr = winning_rrr / len([t for t in risk_reward_data if t['win']]) if any(t['win'] for t in risk_reward_data) else 0
+    avg_losing_rrr = losing_rrr / len([t for t in risk_reward_data if not t['win']]) if any(not t['win'] for t in risk_reward_data) else 0
+    
+    # Calculate success rate by RRR
+    success_by_rrr = {}
+    for data in risk_reward_data:
+        rrr_range = "1:1-1:1.5" if data['rrr'] < 1.5 else "1:1.5-1:2" if data['rrr'] < 2 else "1:2+"
+        if rrr_range not in success_by_rrr:
+            success_by_rrr[rrr_range] = {'total': 0, 'wins': 0}
+        success_by_rrr[rrr_range]['total'] += 1
+        if data['win']:
+            success_by_rrr[rrr_range]['wins'] += 1
+    
+    return templates.TemplateResponse("risk-reward.html", {
+        "request": request,
+        "user": current_user,
+        "risk_reward_data": risk_reward_data,
+        "avg_rrr": avg_rrr,
+        "avg_winning_rrr": avg_winning_rrr,
+        "avg_losing_rrr": avg_losing_rrr,
+        "success_by_rrr": success_by_rrr,
+        "total_trades": len(risk_reward_data)
+    })
+
+# ==================== API ENDPOINTS FOR AI FEATURES ====================
+
+@app.get("/api/weekly-report/generate")
+async def api_generate_weekly_report(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """API endpoint to generate weekly report"""
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    try:
+        report = crud.generate_weekly_report(db, current_user.id)
+        
+        if report:
+            return JSONResponse({
+                "success": True,
+                "report_id": report.id,
+                "message": "Weekly report generated successfully"
+            })
+        else:
+            return JSONResponse({
+                "success": False,
+                "error": "No trades found for the past week"
+            })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+@app.get("/api/badges")
+async def api_get_badges(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Get user badges"""
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    badges = crud.get_user_badges(db, current_user.id)
+    
+    return JSONResponse({
+        "badges": [
+            {
+                "id": badge.id,
+                "type": badge.badge_type,
+                "description": badge.description,
+                "awarded_date": badge.awarded_date.isoformat()
+            }
+            for badge in badges
+        ]
+    })
+
+@app.get("/api/checklists")
+async def api_get_checklists(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Get user checklists"""
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    checklists = crud.get_trade_checklists(db, current_user.id)
+    
+    return JSONResponse({
+        "checklists": [
+            {
+                "id": checklist.id,
+                "name": checklist.name,
+                "items": checklist.items,
+                "created_at": checklist.created_at.isoformat()
+            }
+            for checklist in checklists
+        ]
+    })
+
+
+
+@app.post("/checklist/create-debug")
+async def create_checklist_debug(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Debug endpoint to see what's being sent"""
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    try:
+        # Get form data
+        form_data = await request.form()
+        print("=== DEBUG FORM DATA ===")
+        print("Form data keys:", dict(form_data).keys())
+        print("Form data values:", dict(form_data))
+        
+        # Get JSON if any
+        try:
+            json_data = await request.json()
+            print("JSON data:", json_data)
+        except:
+            print("No JSON data")
+        
+        return JSONResponse({
+            "form_data": dict(form_data),
+            "success": True
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@app.get("/api/news")
+async def api_get_news(
+    request: Request,
+    unread_only: bool = False,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Get news alerts"""
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    news_alerts = crud.get_news_alerts(db, current_user.id, limit=limit, unread_only=unread_only)
+    
+    return JSONResponse({
+        "news": [
+            {
+                "id": news.id,
+                "title": news.title,
+                "summary": news.summary,
+                "symbol": news.symbol,
+                "impact": news.impact,
+                "source": news.source,
+                "published_at": news.published_at.isoformat(),
+                "is_read": news.is_read
+            }
+            for news in news_alerts
+        ]
+    })
+
+@app.get("/api/risk-reward-stats")
+async def api_get_risk_reward_stats(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Get risk-reward statistics"""
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    # Get trades with SL/TP
+    trades = db.query(Trade).filter(
+        Trade.user_id == current_user.id,
+        Trade.sl.isnot(None),
+        Trade.tp.isnot(None)
+    ).all()
+    
+    if not trades:
+        return JSONResponse({
+            "message": "No trades with stop-loss and take-profit data"
+        })
+    
+    # Calculate statistics
+    rrr_values = []
+    for trade in trades:
+        risk = abs(trade.entry_price - trade.sl)
+        reward = abs(trade.tp - trade.entry_price)
+        if risk > 0:
+            rrr_values.append({
+                'rrr': reward / risk,
+                'profit': trade.profit,
+                'win': trade.profit > 0
+            })
+    
+    if not rrr_values:
+        return JSONResponse({
+            "message": "No valid risk-reward ratios calculated"
+        })
+    
+    # Calculate stats
+    avg_rrr = sum(r['rrr'] for r in rrr_values) / len(rrr_values)
+    winning_rrr = [r for r in rrr_values if r['win']]
+    losing_rrr = [r for r in rrr_values if not r['win']]
+    
+    avg_winning_rrr = sum(r['rrr'] for r in winning_rrr) / len(winning_rrr) if winning_rrr else 0
+    avg_losing_rrr = sum(r['rrr'] for r in losing_rrr) / len(losing_rrr) if losing_rrr else 0
+    
+    # Success rate by RRR range
+    success_rate_by_range = {}
+    for r in rrr_values:
+        if r['rrr'] < 1:
+            range_key = "Less than 1:1"
+        elif r['rrr'] < 1.5:
+            range_key = "1:1 to 1:1.5"
+        elif r['rrr'] < 2:
+            range_key = "1:1.5 to 1:2"
+        else:
+            range_key = "Greater than 1:2"
+        
+        if range_key not in success_rate_by_range:
+            success_rate_by_range[range_key] = {'total': 0, 'wins': 0}
+        
+        success_rate_by_range[range_key]['total'] += 1
+        if r['win']:
+            success_rate_by_range[range_key]['wins'] += 1
+    
+    # Calculate win rates
+    for key in success_rate_by_range:
+        total = success_rate_by_range[key]['total']
+        wins = success_rate_by_range[key]['wins']
+        success_rate_by_range[key]['win_rate'] = (wins / total * 100) if total > 0 else 0
+    
+    return JSONResponse({
+        'total_trades_analyzed': len(rrr_values),
+        'avg_rrr': avg_rrr,
+        'avg_winning_rrr': avg_winning_rrr,
+        'avg_losing_rrr': avg_losing_rrr,
+        'success_rate_by_range': success_rate_by_range,
+        'recommended_rrr': max(1.5, avg_winning_rrr) if avg_winning_rrr > 0 else 1.5
+    })
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/health")
@@ -1182,9 +1804,13 @@ async def startup_event():
             print(f"  Password: {admin_password[:8]}... (first 8 chars)")
         else:
             print(f"✓ Admin user already exists: {settings.ADMIN_EMAIL}")
+        
+        # Create default checklists
+        crud.create_default_checklists(db)
+        print("✓ Default checklists created")
     
     except Exception as e:
-        print(f"✗ Error creating admin user: {str(e)}")
+        print(f"✗ Error during startup: {str(e)}")
         import traceback
         traceback.print_exc()
     finally:

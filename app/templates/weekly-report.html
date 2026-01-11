@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Weekly Report - Trading Journal{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+        <i class="fas fa-chart-line"></i> Weekly Report
+    </h1>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content - 2/3 width -->
+        <div class="lg:col-span-2">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">AI-Powered Weekly Analysis</h2>
+                </div>
+                <div class="p-6">
+                    {% if not weekly_reports %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-chart-line text-4xl text-gray-300 dark:text-gray-700 mb-3"></i>
+                        <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">No Weekly Reports Yet</h4>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">Generate your first AI-powered weekly report to get insights into your trading performance.</p>
+                        <form method="POST" action="/generate-weekly-report">
+                            <button type="submit" 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium flex items-center gap-2 mx-auto">
+                                <i class="fas fa-magic"></i> Generate Weekly Report
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="mb-6">
+                        <form method="POST" action="/generate-weekly-report" class="inline">
+                            <button type="submit" 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium flex items-center gap-2"
+                                    id="generate-report-btn">
+                                <i class="fas fa-sync-alt"></i> Generate New Report
+                            </button>
+                        </form>
+                    </div>
+                    
+                    {% for report in weekly_reports %}
+                    <div class="report-card mb-6 p-6 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                                Week of {{ report.week_start.strftime('%b %d, %Y') }} - {{ report.week_end.strftime('%b %d, %Y') }}
+                            </h3>
+                            <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                                Score: {{ "%.1f"|format(report.performance_score|default(0)) }}/100
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                                <p class="text-gray-500 dark:text-gray-400 text-sm mb-1">Total Trades</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ report.total_trades }}</p>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                                <p class="text-gray-500 dark:text-gray-400 text-sm mb-1">Win Rate</p>
+                                <p class="text-2xl font-bold {% if report.win_rate > 60 %}text-green-600{% elif report.win_rate > 40 %}text-yellow-500 dark:text-yellow-400{% else %}text-red-600{% endif %}">
+                                    {{ "%.1f"|format(report.win_rate|default(0)) }}%
+                                </p>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                                <p class="text-gray-500 dark:text-gray-400 text-sm mb-1">Total Profit</p>
+                                <p class="text-2xl font-bold {% if report.total_profit > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                    ${{ "%.2f"|format(report.total_profit|default(0)) }}
+                                </p>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
+                                <p class="text-gray-500 dark:text-gray-400 text-sm mb-1">Avg R:R</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ "%.2f"|format(report.avg_rrr|default(0)) }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="font-medium mb-2 text-gray-900 dark:text-gray-100">Summary</h4>
+                            <p class="text-gray-700 dark:text-gray-300">{{ report.summary|default("No summary available") }}</p>
+                        </div>
+                        
+                        {% if report.recommendations %}
+                        <div class="mb-4">
+                            <h4 class="font-medium mb-2 text-gray-900 dark:text-gray-100">AI Recommendations</h4>
+                            <ul class="list-disc pl-5 text-gray-700 dark:text-gray-300 space-y-1">
+                                {% for rec in report.recommendations %}
+                                <li>{{ rec }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        {% if report.patterns_identified %}
+                        <div class="mb-4">
+                            <h4 class="font-medium mb-2 text-gray-900 dark:text-gray-100">Patterns Identified</h4>
+                            <div class="flex flex-wrap gap-2">
+                                {% for pattern in report.patterns_identified %}
+                                <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-3 py-1 rounded-full">
+                                    {{ pattern }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            {% if report.best_trade %}
+                            <div class="border border-green-200 dark:border-green-800 rounded-lg overflow-hidden">
+                                <div class="bg-green-600 text-white px-4 py-3">
+                                    <h4 class="font-medium flex items-center gap-2">
+                                        <i class="fas fa-trophy"></i> Best Trade
+                                    </h4>
+                                </div>
+                                <div class="p-4 bg-green-50 dark:bg-green-900/20">
+                                    <p class="mb-1 text-gray-900 dark:text-gray-100">
+                                        <span class="font-medium">Symbol:</span> {{ report.best_trade.symbol }}
+                                    </p>
+                                    <p class="mb-1 text-gray-900 dark:text-gray-100">
+                                        <span class="font-medium">Profit:</span> 
+                                        <span class="text-green-600 dark:text-green-400 font-medium">
+                                            ${{ "%.2f"|format(report.best_trade.profit) }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if report.worst_trade %}
+                            <div class="border border-red-200 dark:border-red-800 rounded-lg overflow-hidden">
+                                <div class="bg-red-600 text-white px-4 py-3">
+                                    <h4 class="font-medium flex items-center gap-2">
+                                        <i class="fas fa-exclamation-triangle"></i> Lesson Trade
+                                    </h4>
+                                </div>
+                                <div class="p-4 bg-red-50 dark:bg-red-900/20">
+                                    <p class="mb-1 text-gray-900 dark:text-gray-100">
+                                        <span class="font-medium">Symbol:</span> {{ report.worst_trade.symbol }}
+                                    </p>
+                                    <p class="mb-1 text-gray-900 dark:text-gray-100">
+                                        <span class="font-medium">Loss:</span> 
+                                        <span class="text-red-600 dark:text-red-400 font-medium">
+                                            ${{ "%.2f"|format(report.worst_trade.profit) }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="pt-4 border-t border-gray-100 dark:border-gray-700">
+                            <p class="text-gray-500 dark:text-gray-400 text-sm">
+                                Generated: {{ report.report_date.strftime('%Y-%m-%d %H:%M') }}
+                            </p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar - 1/3 width -->
+        <div class="space-y-6">
+            <!-- Badges Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                        <i class="fas fa-award"></i> Your Badges
+                    </h2>
+                </div>
+                <div class="p-6">
+                    {% if badges %}
+                    <div class="grid grid-cols-2 gap-4">
+                        {% for badge in badges %}
+                        <div class="text-center">
+                            {% if badge.badge_type == 'best_trader' %}
+                            <i class="fas fa-crown text-3xl text-yellow-500 mb-2"></i>
+                            {% elif badge.badge_type == 'consistency' %}
+                            <i class="fas fa-chart-line text-3xl text-blue-500 mb-2"></i>
+                            {% elif badge.badge_type == 'risk_manager' %}
+                            <i class="fas fa-shield-alt text-3xl text-green-500 mb-2"></i>
+                            {% elif badge.badge_type == 'high_profit' %}
+                            <i class="fas fa-money-bill-wave text-3xl text-green-500 mb-2"></i>
+                            {% elif badge.badge_type == 'disciplined' %}
+                            <i class="fas fa-user-check text-3xl text-blue-400 mb-2"></i>
+                            {% elif badge.badge_type == 'comeback_king' %}
+                            <i class="fas fa-redo text-3xl text-red-500 mb-2"></i>
+                            {% else %}
+                            <i class="fas fa-award text-3xl text-gray-400 mb-2"></i>
+                            {% endif %}
+                            <h4 class="font-medium text-sm mb-1 text-gray-900 dark:text-gray-100">
+                                {{ badge.badge_type|replace('_', ' ')|title }}
+                            </h4>
+                            <p class="text-gray-500 dark:text-gray-400 text-xs mb-1">{{ badge.description }}</p>
+                            <p class="text-gray-400 dark:text-gray-500 text-xs">
+                                {{ badge.awarded_date.strftime('%Y-%m-%d') }}
+                            </p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-6">
+                        <i class="fas fa-award text-4xl text-gray-300 dark:text-gray-700 mb-3"></i>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">Earn badges by improving your trading performance!</p>
+                        <a href="/badges" 
+                           class="inline-block border border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition text-sm font-medium">
+                            View All Badges
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                        <i class="fas fa-chart-bar"></i> Quick Stats
+                    </h2>
+                </div>
+                <div class="p-6">
+                    {% if weekly_reports %}
+                    {% set latest_report = weekly_reports[0] %}
+                    <div class="mb-6">
+                        <h4 class="font-medium mb-2 text-gray-900 dark:text-gray-100">Latest Week Performance</h4>
+                        <div class="mb-1">
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-5">
+                                <div class="bg-green-600 h-5 rounded-full text-xs font-medium flex items-center justify-center text-white"
+                                     style="width: {{ latest_report.performance_score }}%">
+                                    {{ "%.1f"|format(latest_report.performance_score|default(0)) }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="space-y-1">
+                        <a href="/stats" 
+                           class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-750 p-2 rounded transition text-sm">
+                            <i class="fas fa-chart-bar text-gray-400 dark:text-gray-500"></i>
+                            Detailed Statistics
+                        </a>
+                        <a href="/risk-reward" 
+                           class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-750 p-2 rounded transition text-sm">
+                            <i class="fas fa-balance-scale text-gray-400 dark:text-gray-500"></i>
+                            Risk-Reward Analysis
+                        </a>
+                        <a href="/checklist" 
+                           class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-750 p-2 rounded transition text-sm">
+                            <i class="fas fa-tasks text-gray-400 dark:text-gray-500"></i>
+                            Trade Checklists
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

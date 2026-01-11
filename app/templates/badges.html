@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Badges - Trading Journal{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+        <i class="fas fa-trophy"></i> Trading Badges
+    </h1>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content - 2/3 width -->
+        <div class="lg:col-span-2">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Your Badges</h2>
+                </div>
+                <div class="p-6">
+                    {% if badges %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% for badge in badges %}
+                        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-md transition text-center h-full dark:hover:bg-gray-750">
+                            {% if badge.badge_type == 'best_trader' %}
+                            <div class="mb-4">
+                                <i class="fas fa-crown text-4xl text-yellow-500"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2 text-gray-900 dark:text-gray-100">Best Trader</h3>
+                            {% elif badge.badge_type == 'consistency' %}
+                            <div class="mb-4">
+                                <i class="fas fa-chart-line text-4xl text-blue-500"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2 text-gray-900 dark:text-gray-100">Consistency</h3>
+                            {% elif badge.badge_type == 'risk_manager' %}
+                            <div class="mb-4">
+                                <i class="fas fa-shield-alt text-4xl text-green-500"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2 text-gray-900 dark:text-gray-100">Risk Manager</h3>
+                            {% elif badge.badge_type == 'high_profit' %}
+                            <div class="mb-4">
+                                <i class="fas fa-money-bill-wave text-4xl text-green-500"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2 text-gray-900 dark:text-gray-100">High Profit</h3>
+                            {% elif badge.badge_type == 'disciplined' %}
+                            <div class="mb-4">
+                                <i class="fas fa-user-check text-4xl text-blue-400"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2 text-gray-900 dark:text-gray-100">Disciplined</h3>
+                            {% elif badge.badge_type == 'comeback_king' %}
+                            <div class="mb-4">
+                                <i class="fas fa-redo text-4xl text-red-500"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2 text-gray-900 dark:text-gray-100">Comeback King</h3>
+                            {% else %}
+                            <div class="mb-4">
+                                <i class="fas fa-award text-4xl text-gray-400"></i>
+                            </div>
+                            <h3 class="font-semibold text-lg mb-2 text-gray-900 dark:text-gray-100">{{ badge.badge_type|replace('_', ' ')|title }}</h3>
+                            {% endif %}
+                            
+                            <p class="text-gray-600 dark:text-gray-300 mb-4">{{ badge.description }}</p>
+                            <p class="text-gray-400 dark:text-gray-500 text-sm">
+                                Awarded on {{ badge.awarded_date.strftime('%B %d, %Y') }}
+                            </p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-award text-5xl text-gray-300 dark:text-gray-700 mb-4"></i>
+                        <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">No Badges Yet</h4>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">Start trading and improve your performance to earn badges!</p>
+                        <div class="max-w-2xl mx-auto">
+                            <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+                                <h4 class="font-medium mb-4 text-gray-900 dark:text-gray-100">How to Earn Badges:</h4>
+                                <ul class="text-left space-y-3 text-sm">
+                                    <li class="flex items-start gap-2 text-gray-600 dark:text-gray-300">
+                                        <i class="fas fa-crown text-yellow-500 mt-0.5"></i>
+                                        <div>
+                                            <span class="font-medium">Best Trader:</span> Achieve >70% win rate with consistent profits
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start gap-2 text-gray-600 dark:text-gray-300">
+                                        <i class="fas fa-chart-line text-blue-500 mt-0.5"></i>
+                                        <div>
+                                            <span class="font-medium">Consistency:</span> Maintain profitable trades over multiple sessions
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start gap-2 text-gray-600 dark:text-gray-300">
+                                        <i class="fas fa-shield-alt text-green-500 mt-0.5"></i>
+                                        <div>
+                                            <span class="font-medium">Risk Manager:</span> Excellent risk-reward ratio management
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start gap-2 text-gray-600 dark:text-gray-300">
+                                        <i class="fas fa-money-bill-wave text-green-500 mt-0.5"></i>
+                                        <div>
+                                            <span class="font-medium">High Profit:</span> Achieve exceptional profit levels
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start gap-2 text-gray-600 dark:text-gray-300">
+                                        <i class="fas fa-user-check text-blue-400 mt-0.5"></i>
+                                        <div>
+                                            <span class="font-medium">Disciplined:</span> Follow trading rules consistently
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start gap-2 text-gray-600 dark:text-gray-300">
+                                        <i class="fas fa-redo text-red-500 mt-0.5"></i>
+                                        <div>
+                                            <span class="font-medium">Comeback King:</span> Recover from drawdown successfully
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar - 1/3 width -->
+        <div class="space-y-6">
+            <!-- Available Badges -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Available Badges</h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        {% for badge_type, description in badge_descriptions.items() %}
+                        <div class="border-b border-gray-100 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                            <div class="flex items-start">
+                                {% if badge_type == 'best_trader' %}
+                                <i class="fas fa-crown text-yellow-500 mt-1 mr-3"></i>
+                                {% elif badge_type == 'consistency' %}
+                                <i class="fas fa-chart-line text-blue-500 mt-1 mr-3"></i>
+                                {% elif badge_type == 'risk_manager' %}
+                                <i class="fas fa-shield-alt text-green-500 mt-1 mr-3"></i>
+                                {% elif badge_type == 'high_profit' %}
+                                <i class="fas fa-money-bill-wave text-green-500 mt-1 mr-3"></i>
+                                {% elif badge_type == 'disciplined' %}
+                                <i class="fas fa-user-check text-blue-400 mt-1 mr-3"></i>
+                                {% elif badge_type == 'comeback_king' %}
+                                <i class="fas fa-redo text-red-500 mt-1 mr-3"></i>
+                                {% else %}
+                                <i class="fas fa-award text-gray-400 mt-1 mr-3"></i>
+                                {% endif %}
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1 text-gray-900 dark:text-gray-100">
+                                        {{ badge_type|replace('_', ' ')|title }}
+                                    </h4>
+                                    <p class="text-gray-500 dark:text-gray-400 text-xs">{{ description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Your Progress</h2>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <h4 class="font-medium mb-2 text-gray-900 dark:text-gray-100">Badges Earned</h4>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">
+                                {{ badges|length }} / {{ badge_descriptions|length }}
+                            </span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                {{ ((badges|length / badge_descriptions|length) * 100)|round|int }}%
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" 
+                                 style="width: {{ (badges|length / badge_descriptions|length) * 100 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <a href="/weekly-report" 
+                           class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-750 p-2 rounded transition text-sm">
+                            <i class="fas fa-chart-line text-gray-400 dark:text-gray-500"></i>
+                            Generate Weekly Report
+                        </a>
+                        <a href="/stats" 
+                           class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-750 p-2 rounded transition text-sm">
+                            <i class="fas fa-chart-bar text-gray-400 dark:text-gray-500"></i>
+                            View Statistics
+                        </a>
+                        <a href="/trades" 
+                           class="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-750 p-2 rounded transition text-sm">
+                            <i class="fas fa-exchange-alt text-gray-400 dark:text-gray-500"></i>
+                            Review Trades
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -10,23 +10,8 @@
         <p class="text-gray-600 dark:text-gray-300">Sync your trades from MetaTrader 5 terminal</p>
     </div>
 
-    {% if message %}
-    <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-800 dark:text-green-300">
-        <div class="flex items-center">
-            <i class="fas fa-check-circle mr-2"></i>
-            {{ message }}
-        </div>
-    </div>
-    {% endif %}
-
-    {% if error %}
-    <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-300">
-        <div class="flex items-center">
-            <i class="fas fa-exclamation-circle mr-2"></i>
-            {{ error }}
-        </div>
-    </div>
-    {% endif %}
+    <!-- Notification area -->
+    <div id="notification-area" class="mb-6"></div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Manual Sync Form -->
@@ -34,7 +19,7 @@
             <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Manual Sync</h2>
             <p class="text-gray-600 dark:text-gray-400 mb-6">Sync trades for a specific number of days</p>
             
-            <form method="post" action="/sync">
+            <form id="syncForm" class="sync-form" onsubmit="event.preventDefault(); manualSync();">
                 <div class="mb-4">
                     <label for="days" class="block text-gray-700 dark:text-gray-300 mb-2">
                         Number of days to sync:
@@ -52,7 +37,8 @@
                 </div>
                 
                 <button type="submit" 
-                        class="w-full bg-blue-600 dark:bg-blue-500 text-white py-3 px-4 rounded hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors">
+                        id="manualSyncBtn"
+                        class="w-full bg-blue-600 dark:bg-blue-500 text-white py-3 px-4 rounded hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors flex items-center justify-center">
                     <i class="fas fa-sync mr-2"></i> Start Sync
                 </button>
             </form>
@@ -65,22 +51,26 @@
             
             <div class="space-y-4">
                 <button onclick="quickSync(7)" 
-                        class="w-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 py-3 px-4 rounded hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                        id="sync7days"
+                        class="w-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 py-3 px-4 rounded hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 flex items-center justify-center">
                     <i class="fas fa-sync-alt mr-2"></i> Sync Last 7 Days
                 </button>
                 
                 <button onclick="quickSync(30)" 
-                        class="w-full bg-blue-200 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 py-3 px-4 rounded hover:bg-blue-300 dark:hover:bg-blue-800/50 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                        id="sync30days"
+                        class="w-full bg-blue-200 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 py-3 px-4 rounded hover:bg-blue-300 dark:hover:bg-blue-800/50 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 flex items-center justify-center">
                     <i class="fas fa-sync-alt mr-2"></i> Sync Last 30 Days
                 </button>
                 
                 <button onclick="quickSync(90)" 
-                        class="w-full bg-blue-300 dark:bg-blue-900/50 text-blue-900 dark:text-blue-100 py-3 px-4 rounded hover:bg-blue-400 dark:hover:bg-blue-800/60 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                        id="sync90days"
+                        class="w-full bg-blue-300 dark:bg-blue-900/50 text-blue-900 dark:text-blue-100 py-3 px-4 rounded hover:bg-blue-400 dark:hover:bg-blue-800/60 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 flex items-center justify-center">
                     <i class="fas fa-sync-alt mr-2"></i> Sync Last 90 Days
                 </button>
                 
                 <button onclick="quickSync(365)" 
-                        class="w-full bg-green-600 dark:bg-green-500 text-white py-3 px-4 rounded hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                        id="sync1year"
+                        class="w-full bg-green-600 dark:bg-green-500 text-white py-3 px-4 rounded hover:bg-green-700 dark:hover:bg-green-600 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 flex items-center justify-center">
                     <i class="fas fa-history mr-2"></i> Sync All History (1 Year)
                 </button>
             </div>
@@ -98,7 +88,7 @@
             <li>Select the number of days to sync or use quick sync options</li>
             <li>Click "Start Sync" to begin the synchronization process</li>
             <li>Wait for the sync to complete (this may take a few moments)</li>
-            <li>Once complete, you'll be redirected to the dashboard</li>
+            <li>Once complete, you'll see updated statistics below</li>
         </ol>
         
         <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-sm text-blue-800 dark:text-blue-300">
@@ -144,6 +134,14 @@
                 <div class="text-sm text-gray-600 dark:text-gray-400">Win Rate</div>
             </div>
         </div>
+        
+        <!-- Manual Refresh Button -->
+        <div class="mt-4 text-center">
+            <button id="refreshDataBtn" 
+                    class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                <i class="fas fa-redo-alt mr-2"></i> Refresh Data
+            </button>
+        </div>
     </div>
 
     <!-- Recent Sync History -->
@@ -158,96 +156,201 @@
 </div>
 
 <script>
-async function quickSync(days) {
-    const button = event.target;
-    const originalText = button.textContent;
-    const originalHTML = button.innerHTML;
-    
-    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Syncing...';
-    button.disabled = true;
-    
-    // Disable all quick sync buttons
-    document.querySelectorAll('button[onclick^="quickSync"]').forEach(btn => {
-        btn.disabled = true;
-    });
-    
-    try {
-        const response = await fetch('/api/sync-mt5?days=' + days, {
-            method: 'POST'
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // Show success notification
-            showNotification('success', '✅ Sync successful!', 'Total trades in database: ' + result.total_in_db);
-            
-            // Reload database info
-            setTimeout(() => {
-                loadDatabaseInfo();
-                loadSyncHistory();
-            }, 1000);
-            
-            // Optionally redirect to dashboard
-            setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 2000);
-        } else {
-            showNotification('error', '❌ Sync failed', result.error || 'Unknown error');
-        }
-    } catch (error) {
-        showNotification('error', '❌ Error', 'Error syncing trades: ' + error.message);
-    } finally {
-        button.innerHTML = originalHTML;
-        button.disabled = false;
-        
-        // Re-enable all quick sync buttons
-        document.querySelectorAll('button[onclick^="quickSync"]').forEach(btn => {
-            btn.disabled = false;
-        });
-    }
-}
+// Global state to prevent multiple syncs
+let isSyncing = false;
 
 // Show notification
-function showNotification(type, title, message) {
-    // Create notification element
+function showNotification(type, title, message, duration = 5000) {
+    const notificationArea = document.getElementById('notification-area');
+    const notificationId = 'notification-' + Date.now();
+    
+    const colors = {
+        success: { bg: 'bg-green-50 dark:bg-green-900/30', border: 'border-green-200 dark:border-green-800', text: 'text-green-800 dark:text-green-300' },
+        error: { bg: 'bg-red-50 dark:bg-red-900/30', border: 'border-red-200 dark:border-red-800', text: 'text-red-800 dark:text-red-300' },
+        warning: { bg: 'bg-yellow-50 dark:bg-yellow-900/30', border: 'border-yellow-200 dark:border-yellow-800', text: 'text-yellow-800 dark:text-yellow-300' },
+        info: { bg: 'bg-blue-50 dark:bg-blue-900/30', border: 'border-blue-200 dark:border-blue-800', text: 'text-blue-800 dark:text-blue-300' }
+    };
+    
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+    
     const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-x-full ${
-        type === 'success' 
-            ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
-            : 'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
-    }`;
+    notification.id = notificationId;
+    notification.className = `p-4 mb-4 rounded-lg border-l-4 ${colors[type].bg} ${colors[type].border} ${colors[type].text} animate-fade-in`;
+    notification.style.borderLeftColor = 'currentColor';
     
     notification.innerHTML = `
-        <div class="flex items-center">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-3"></i>
-            <div>
-                <div class="font-bold">${title}</div>
-                <div class="text-sm">${message}</div>
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <i class="fas ${icons[type]} mr-3"></i>
+                <div>
+                    <div class="font-bold">${title}</div>
+                    <div class="text-sm mt-1">${message}</div>
+                </div>
             </div>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+            <button onclick="document.getElementById('${notificationId}').remove()" 
+                    class="ml-4 ${colors[type].text} hover:opacity-75">
                 <i class="fas fa-times"></i>
             </button>
         </div>
     `;
     
-    document.body.appendChild(notification);
+    notificationArea.prepend(notification);
     
-    // Animate in
-    setTimeout(() => {
-        notification.classList.remove('translate-x-full');
-        notification.classList.add('translate-x-0');
-    }, 10);
-    
-    // Remove after 5 seconds
-    setTimeout(() => {
-        notification.classList.add('translate-x-full');
+    // Auto-remove after duration
+    if (duration > 0) {
         setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
+            const notif = document.getElementById(notificationId);
+            if (notif) {
+                notif.style.opacity = '0';
+                notif.style.transition = 'opacity 0.3s';
+                setTimeout(() => notif.remove(), 300);
             }
-        }, 300);
-    }, 5000);
+        }, duration);
+    }
+    
+    return notificationId;
+}
+
+// Disable/enable sync buttons
+function setSyncButtonsState(disabled) {
+    const buttons = [
+        'manualSyncBtn',
+        'sync7days',
+        'sync30days',
+        'sync90days',
+        'sync1year'
+    ];
+    
+    buttons.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.disabled = disabled;
+            btn.classList.toggle('opacity-50', disabled);
+            btn.classList.toggle('cursor-not-allowed', disabled);
+            
+            if (disabled && id === 'manualSyncBtn') {
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-spinner fa-spin mr-2';
+                }
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Syncing...`;
+            } else if (!disabled && id === 'manualSyncBtn') {
+                btn.innerHTML = `<i class="fas fa-sync mr-2"></i> Start Sync`;
+            }
+        }
+    });
+}
+
+// Manual sync function
+async function manualSync() {
+    if (isSyncing) {
+        showNotification('warning', 'Sync in Progress', 'Please wait for the current sync to complete');
+        return;
+    }
+    
+    const days = document.getElementById('days').value;
+    if (!days || days < 1) {
+        showNotification('error', 'Invalid Input', 'Please enter a valid number of days');
+        return;
+    }
+    
+    await performSync(parseInt(days), 'manualSyncBtn');
+}
+
+// Quick sync function
+async function quickSync(days) {
+    if (isSyncing) {
+        showNotification('warning', 'Sync in Progress', 'Please wait for the current sync to complete');
+        return;
+    }
+    
+    await performSync(days, event.target.id);
+}
+
+// Main sync function
+async function performSync(days, buttonId) {
+    isSyncing = true;
+    setSyncButtonsState(true);
+    
+    try {
+        // Show syncing notification
+        const notificationId = showNotification('info', '🔄 Syncing Trades', 'Please wait while we sync your trades...', 0);
+        
+        // Use the /api/sync-mt5 endpoint which returns JSON
+        const response = await fetch(`/api/sync-mt5?days=${days}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        // Remove the loading notification
+        const loadingNotif = document.getElementById(notificationId);
+        if (loadingNotif) loadingNotif.remove();
+        
+        if (result.success) {
+            showNotification('success', '✅ Sync Successful', 
+                `Synced ${result.synced_count || result.synced_trades || 0} trades. Total in database: ${result.total_in_db || 0}`);
+            
+            // Reload data without page refresh
+            await reloadAllData();
+            
+            // Show option to go to dashboard
+            const successId = showNotification('info', 'Sync Complete', 'View your updated trades on the dashboard', 10000);
+            
+            // Add dashboard link
+            setTimeout(() => {
+                const notif = document.getElementById(successId);
+                if (notif) {
+                    const linkDiv = document.createElement('div');
+                    linkDiv.className = 'mt-2';
+                    linkDiv.innerHTML = `
+                        <a href="/dashboard" 
+                           class="inline-flex items-center text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors">
+                            <i class="fas fa-chart-line mr-2"></i> Go to Dashboard
+                        </a>
+                    `;
+                    notif.querySelector('.text-sm').appendChild(linkDiv);
+                }
+            }, 100);
+            
+        } else {
+            showNotification('error', '❌ Sync Failed', 
+                result.error || 'An error occurred during sync');
+        }
+        
+    } catch (error) {
+        console.error('Sync error:', error);
+        showNotification('error', '❌ Network Error', 
+            'Failed to connect to server. Please check your connection.');
+    } finally {
+        isSyncing = false;
+        setSyncButtonsState(false);
+    }
+}
+
+// Reload all data
+async function reloadAllData() {
+    try {
+        // Load stats
+        await loadDatabaseInfo();
+        
+        // Load sync history
+        await loadSyncHistory();
+        
+        showNotification('info', 'Data Refreshed', 'All statistics have been updated');
+        
+    } catch (error) {
+        console.error('Error reloading data:', error);
+        showNotification('error', 'Data Error', 'Failed to reload data');
+    }
 }
 
 // Load database info
@@ -256,11 +359,15 @@ async function loadDatabaseInfo() {
         const response = await fetch('/api/stats');
         const stats = await response.json();
         
+        if (stats.error) {
+            throw new Error(stats.error);
+        }
+        
         const syncStatusIcon = document.getElementById('syncStatusIcon');
         if (stats.total_trades > 0) {
             syncStatusIcon.className = 'w-3 h-3 bg-green-500 rounded-full mr-2';
             document.getElementById('syncStatus').textContent = 
-                stats.total_trades + ' trades synced';
+                `${stats.total_trades} trades synced`;
         } else {
             syncStatusIcon.className = 'w-3 h-3 bg-yellow-500 rounded-full mr-2';
             document.getElementById('syncStatus').textContent = 'No trades synced yet';
@@ -269,45 +376,44 @@ async function loadDatabaseInfo() {
         // Update stats boxes
         document.getElementById('totalTrades').textContent = stats.total_trades;
         document.getElementById('totalProfit').textContent = '$' + stats.total_profit.toFixed(2);
-        document.getElementById('totalProfit').className = stats.total_profit > 0 
-            ? 'text-2xl font-bold text-green-600 dark:text-green-400'
-            : stats.total_profit < 0
-                ? 'text-2xl font-bold text-red-600 dark:text-red-400'
-                : 'text-2xl font-bold text-gray-900 dark:text-white';
+        
+        const profitElement = document.getElementById('totalProfit');
+        if (stats.total_profit > 0) {
+            profitElement.className = 'text-2xl font-bold text-green-600 dark:text-green-400';
+        } else if (stats.total_profit < 0) {
+            profitElement.className = 'text-2xl font-bold text-red-600 dark:text-red-400';
+        } else {
+            profitElement.className = 'text-2xl font-bold text-gray-900 dark:text-white';
+        }
         
         document.getElementById('winRate').textContent = stats.win_rate.toFixed(1) + '%';
         
-        // Try to get last sync time from recent trades
-        if (stats.total_trades > 0) {
-            try {
-                const tradesResponse = await fetch('/api/trades?limit=1');
-                const trades = await tradesResponse.json();
-                if (trades.length > 0) {
-                    const lastTradeDate = new Date(trades[0].time);
-                    const now = new Date();
-                    const diffMs = now - lastTradeDate;
-                    const diffMins = Math.floor(diffMs / 60000);
-                    const diffHours = Math.floor(diffMs / 3600000);
-                    const diffDays = Math.floor(diffMs / 86400000);
-                    
-                    let timeText;
-                    if (diffMins < 60) {
-                        timeText = `${diffMins} minutes ago`;
-                    } else if (diffHours < 24) {
-                        timeText = `${diffHours} hours ago`;
-                    } else {
-                        timeText = `${diffDays} days ago`;
-                    }
-                    
-                    document.getElementById('lastSync').textContent = 
-                        lastTradeDate.toLocaleDateString() + ` (${timeText})`;
-                }
-            } catch (error) {
-                document.getElementById('lastSync').textContent = 'Recent';
+        // Update last sync time
+        if (stats.last_sync_time) {
+            const lastSync = new Date(stats.last_sync_time);
+            const now = new Date();
+            const diffMs = now - lastSync;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            let timeText;
+            if (diffMins < 1) {
+                timeText = 'Just now';
+            } else if (diffMins < 60) {
+                timeText = `${diffMins} minutes ago`;
+            } else if (diffHours < 24) {
+                timeText = `${diffHours} hours ago`;
+            } else {
+                timeText = `${diffDays} days ago`;
             }
+            
+            document.getElementById('lastSync').textContent = 
+                lastSync.toLocaleDateString() + ` (${timeText})`;
         } else {
-            document.getElementById('lastSync').textContent = 'Never synced';
+            document.getElementById('lastSync').textContent = 'Never';
         }
+        
     } catch (error) {
         console.error('Error loading database info:', error);
         document.getElementById('syncStatus').textContent = 'Error loading info';
@@ -318,59 +424,60 @@ async function loadDatabaseInfo() {
 // Load sync history
 async function loadSyncHistory() {
     try {
-        // This would need a proper API endpoint for sync history
-        // For now, we'll just show a placeholder
         const response = await fetch('/api/trades?limit=5');
-        const recentTrades = await response.json();
+        const trades = await response.json();
+        
+        if (trades.error) {
+            throw new Error(trades.error);
+        }
         
         const historyDiv = document.getElementById('syncHistory');
         
-        if (recentTrades.length === 0) {
-            historyDiv.innerHTML = '<p class="text-gray-500 dark:text-gray-400">No sync history available</p>';
+        if (!trades.trades || trades.trades.length === 0) {
+            historyDiv.innerHTML = '<p class="text-gray-500 dark:text-gray-400">No trades synced yet</p>';
             return;
         }
         
         let historyHTML = '<div class="space-y-3">';
         
-        // Group trades by day for sync history display
+        // Group trades by day
         const groupedByDay = {};
-        recentTrades.forEach(trade => {
+        trades.trades.forEach(trade => {
             const date = new Date(trade.time).toLocaleDateString();
             if (!groupedByDay[date]) {
                 groupedByDay[date] = {
                     count: 0,
-                    profit: 0
+                    profit: 0,
+                    date: date
                 };
             }
             groupedByDay[date].count++;
             groupedByDay[date].profit += trade.profit;
         });
         
-        // Show last 5 sync days
-        const syncDays = Object.entries(groupedByDay).slice(0, 5);
+        // Sort by date descending
+        const sortedDays = Object.values(groupedByDay)
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 5);
         
-        if (syncDays.length === 0) {
-            historyHTML += '<p class="text-gray-500 dark:text-gray-400">No sync history available</p>';
-        } else {
-            syncDays.forEach(([date, data]) => {
-                historyHTML += `
-                    <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded border border-gray-200 dark:border-gray-600">
-                        <div class="flex items-center">
-                            <i class="fas fa-calendar-day text-gray-400 dark:text-gray-500 mr-3"></i>
-                            <div>
-                                <div class="font-medium text-gray-900 dark:text-white">${date}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">${data.count} trades</div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-medium ${data.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
-                                $${data.profit.toFixed(2)}
-                            </div>
+        sortedDays.forEach(dayData => {
+            historyHTML += `
+                <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <i class="fas fa-calendar-day text-gray-400 dark:text-gray-500 mr-3"></i>
+                        <div>
+                            <div class="font-medium text-gray-900 dark:text-white">${dayData.date}</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">${dayData.count} trades</div>
                         </div>
                     </div>
-                `;
-            });
-        }
+                    <div class="text-right">
+                        <div class="font-medium ${dayData.profit > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+                            $${dayData.profit.toFixed(2)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
         
         historyHTML += '</div>';
         historyDiv.innerHTML = historyHTML;
@@ -382,23 +489,93 @@ async function loadSyncHistory() {
     }
 }
 
-// Load database info when page loads
+// Check MT5 credentials
+async function checkMT5Credentials() {
+    try {
+        const response = await fetch('/api/check-mt5-credentials');
+        const data = await response.json();
+        
+        if (!data.credentials_set) {
+            showNotification('warning', '⚠️ Configuration Required', 
+                'Please configure your MT5 credentials in Settings before syncing.');
+            
+            // Disable sync buttons if no credentials
+            if (!data.credentials_set) {
+                setSyncButtonsState(true);
+                
+                // Update manual sync button text
+                const manualBtn = document.getElementById('manualSyncBtn');
+                if (manualBtn) {
+                    manualBtn.innerHTML = '<i class="fas fa-cog mr-2"></i> Configure MT5 First';
+                    manualBtn.onclick = function() {
+                        window.location.href = '/settings#tab=mt5';
+                    };
+                }
+                
+                // Update quick sync buttons
+                ['sync7days', 'sync30days', 'sync90days', 'sync1year'].forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) {
+                        btn.onclick = function() {
+                            showNotification('warning', 'MT5 Credentials Required', 
+                                'Please configure MT5 credentials in Settings first');
+                            window.location.href = '/settings#tab=mt5';
+                        };
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        // Silently fail - not critical
+        console.log('Could not check MT5 credentials:', error);
+    }
+}
+
+// Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Load initial data
     loadDatabaseInfo();
     loadSyncHistory();
     
-    // Check if MT5 credentials are set
-    fetch('/api/check-mt5-credentials')
-        .then(response => response.json())
-        .then(data => {
-            if (!data.credentials_set) {
-                showNotification('warning', '⚠️ MT5 Credentials Required', 
-                    'Please set up your MT5 credentials in Settings before syncing.');
-            }
-        })
-        .catch(() => {
-            // Silently fail - not critical
+    // Check MT5 credentials
+    checkMT5Credentials();
+    
+    // Setup refresh button
+    document.getElementById('refreshDataBtn').addEventListener('click', reloadAllData);
+    
+    // Setup manual sync form
+    const syncForm = document.getElementById('syncForm');
+    if (syncForm) {
+        syncForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            manualSync();
         });
+    }
+    
+    // Setup quick sync buttons
+    ['sync7days', 'sync30days', 'sync90days', 'sync1year'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const days = parseInt(id.replace('sync', '').replace('days', '').replace('1year', '365'));
+                quickSync(days);
+            });
+        }
+    });
 });
+
+// Animation for notifications
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+    }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}

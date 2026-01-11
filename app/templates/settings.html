@@ -165,7 +165,7 @@
               </div>
             </div>
 
-            {% if user.mt5_server and user.mt5_login %}
+            {% if user.mt5_server and user.mt5_login and user.mt5_password %}
             <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-400 p-4 rounded-r-lg">
               <div class="flex items-start">
                 <i class="fas fa-check-circle text-green-500 dark:text-green-400 mt-0.5 mr-3"></i>
@@ -176,7 +176,19 @@
             <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-400 p-4 rounded-r-lg">
               <div class="flex items-start">
                 <i class="fas fa-exclamation-triangle text-yellow-500 dark:text-yellow-400 mt-0.5 mr-3"></i>
-                <p class="text-yellow-700 dark:text-yellow-300 text-sm">MT5 credentials are not set. Please configure them to sync trades.</p>
+                <p class="text-yellow-700 dark:text-yellow-300 text-sm">
+                  {% if not user.mt5_server and not user.mt5_login and not user.mt5_password %}
+                    MT5 credentials are not set. Please configure all three fields to sync trades.
+                  {% elif user.mt5_server and user.mt5_login and not user.mt5_password %}
+                    MT5 server and login are set, but password is missing. All three fields are required.
+                  {% elif user.mt5_server and not user.mt5_login %}
+                    MT5 server is set, but login is missing. All three fields are required.
+                  {% elif not user.mt5_server and user.mt5_login %}
+                    MT5 login is set, but server is missing. All three fields are required.
+                  {% else %}
+                    MT5 credentials are incomplete. Please configure all fields.
+                  {% endif %}
+                </p>
               </div>
             </div>
             {% endif %}
@@ -545,13 +557,6 @@ document.addEventListener('DOMContentLoaded', function() {
       checkbox.style.borderColor = '#d1d5db';
     }
   });
-  
-  // Auto-switch to MT5 tab if credentials are not set
-  {% if not user.mt5_server or not user.mt5_login %}
-  setTimeout(() => {
-    showTab('mt5');
-  }, 100);
-  {% endif %}
 });
 </script>
 

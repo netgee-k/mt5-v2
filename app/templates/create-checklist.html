@@ -1,0 +1,78 @@
+@app.post("/checklist/create")
+async def create_checklist(
+    request: Request,
+    title: str = Form(None),  # Changed from 'name' to match HTML
+    description: str = Form(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    """Create a new trade checklist - SIMPLIFIED VERSION"""
+    if not current_user:
+        return RedirectResponse(url="/login")
+    
+    try:
+        # Get form data
+        form_data = await request.form()
+        
+        # Extract items - handle different possible formats
+        items = []
+        for key, value in form_data.items():
+            if key.startswith('items') and value.strip():
+                items.append({
+                    'id': len(items) + 1,
+                    'text': value.strip(),
+                    'checked': False,
+                    'required': False  # You can add logic to determine this
+                })
+        
+        # If no items found in items[] format, try single 'items' field
+        if not items and 'items' in form_data:
+            items_str = form_data.get('items', '')
+            if items_str:
+                item_list = [item.strip() for item in items_str.split('\n') if item.strip()]
+                for i, text in enumerate(item_list):
+                    items.append({
+                        'id': i + 1,
+                        'text': text,
+                        'checked': False,
+                        'required': False
+                    })
+        
+        # If still no items, return error
+        if not items:
+            return templates.TemplateResponse("checklist.html", {
+                "request": request,
+                "user": current_user,
+                "user_checklists": crud.get_trade_checklists(db, current_user.id),
+                "default_checklists": crud.get_default_checklists(db),
+                "error": "Please add at least one checklist item"
+            })
+        
+        # Use title or create default name
+        name = title or f"Checklist {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        
+        # Create checklist
+        checklist_create = schemas.TradeChecklistCreate(
+            user_id=current_user.id,
+            name=name,
+            items=items
+        )
+        
+        crud.create_trade_checklist(db, checklist_create)
+        
+        return templates.TemplateResponse("checklist.html", {
+            "request": request,
+            "user": current_user,
+            "user_checklists": crud.get_trade_checklists(db, current_user.id),
+            "default_checklists": crud.get_default_checklists(db),
+            "success": "Checklist created successfully!"
+        })
+    except Exception as e:
+        logger.error(f"Error creating checklist: {e}")
+        return templates.TemplateResponse("checklist.html", {
+            "request": request,
+            "user": current_user,
+            "user_checklists": crud.get_trade_checklists(db, current_user.id),
+            "default_checklists": crud.get_default_checklists(db),
+            "error": f"Error creating checklist: {str(e)}"
+        })
